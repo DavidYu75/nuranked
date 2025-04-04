@@ -1,15 +1,17 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import ProfileCard, { ProfileProps } from './ProfileCard';
-import { getRandomProfiles, voteProfile } from '@/src/services/api';
+import React, { useState, useEffect } from "react";
+import ProfileCard, { ProfileProps } from "./ProfileCard";
+import { getRandomProfiles, voteProfile } from "@/src/services/api";
 
 const VotingInterface: React.FC = () => {
   const [profiles, setProfiles] = useState<ProfileProps[]>([]);
-  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [isVoting, setIsVoting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   // Fetch random profiles on component mount
   useEffect(() => {
@@ -19,72 +21,72 @@ const VotingInterface: React.FC = () => {
   const fetchRandomProfiles = async () => {
     setIsLoading(true);
     setSelectedProfileId(null);
-    setError('');
-    
+    setError("");
+
     try {
       // This would be replaced with actual API data
       const response = await getRandomProfiles();
-      
+
       // For now, we'll use mock data
       const mockProfiles: ProfileProps[] = [
         {
-          id: '1',
-          name: 'Alex Johnson',
-          photo_url: '/placeholder-woman.png', // Use local placeholder image
+          id: "1",
+          name: "Alex Johnson",
+          photo_url: "/placeholder-woman.png", // Use local placeholder image
           experiences: [
             {
-              title: 'Software Engineer Intern',
-              company: 'Amazon',
-              description: 'Worked on AWS Lambda service team'
+              title: "Software Engineer Intern",
+              company: "Amazon",
+              description: "Worked on AWS Lambda service team",
             },
             {
-              title: 'Teaching Assistant',
-              company: 'Northeastern University',
-              description: 'Algorithms and Data Structures'
-            }
+              title: "Teaching Assistant",
+              company: "Northeastern University",
+              description: "Algorithms and Data Structures",
+            },
           ],
           education: {
-            degree: 'BS',
-            major: 'Computer Science',
-            graduation_year: 2025
+            degree: "BS",
+            major: "Computer Science",
+            graduation_year: 2025,
           },
           elo_rating: 1520,
           match_count: 12,
-          linkedin_url: 'https://linkedin.com',
-          github_url: 'https://github.com',
-          revealed: false
+          linkedin_url: "https://linkedin.com",
+          github_url: "https://github.com",
+          revealed: false,
         },
         {
-          id: '2',
-          name: 'Taylor Smith',
-          photo_url: '/placeholder-man.png', // Use local placeholder image
+          id: "2",
+          name: "Taylor Smith",
+          photo_url: "/placeholder-man.png", // Use local placeholder image
           experiences: [
             {
-              title: 'Machine Learning Intern',
-              company: 'Google',
-              description: 'Developed ML models for image recognition'
+              title: "Machine Learning Intern",
+              company: "Google",
+              description: "Developed ML models for image recognition",
             },
             {
-              title: 'Research Assistant',
-              company: 'Northeastern University',
-              description: 'Computer Vision Lab'
-            }
+              title: "Research Assistant",
+              company: "Northeastern University",
+              description: "Computer Vision Lab",
+            },
           ],
           education: {
-            degree: 'MS',
-            major: 'Artificial Intelligence',
-            graduation_year: 2024
+            degree: "MS",
+            major: "Artificial Intelligence",
+            graduation_year: 2024,
           },
           elo_rating: 1550,
           match_count: 15,
-          linkedin_url: 'https://linkedin.com',
-          revealed: false
-        }
+          linkedin_url: "https://linkedin.com",
+          revealed: false,
+        },
       ];
-      
+
       setProfiles(mockProfiles);
     } catch (err) {
-      setError('Failed to fetch profiles. Please try again.');
+      setError("Failed to fetch profiles. Please try again.");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -94,18 +96,20 @@ const VotingInterface: React.FC = () => {
   const handleVote = async (profileId: string) => {
     setIsVoting(true);
     setSelectedProfileId(profileId);
-    
+
     try {
       // This would be replaced with actual API call
       //await voteProfile(profileId);
-      
+
       // For now, we just reveal the profiles
-      setProfiles(profiles.map(profile => ({
-        ...profile,
-        revealed: true
-      })));
+      setProfiles(
+        profiles.map((profile) => ({
+          ...profile,
+          revealed: true,
+        }))
+      );
     } catch (err) {
-      setError('Failed to record vote. Please try again.');
+      setError("Failed to record vote. Please try again.");
       console.error(err);
     } finally {
       setIsVoting(false);
@@ -128,7 +132,7 @@ const VotingInterface: React.FC = () => {
     return (
       <div className="text-center py-10">
         <p className="text-red-500 mb-4">{error}</p>
-        <button 
+        <button
           onClick={fetchRandomProfiles}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
@@ -138,23 +142,27 @@ const VotingInterface: React.FC = () => {
     );
   }
 
-  const allRevealed = profiles.every(profile => profile.revealed);
+  const allRevealed = profiles.every((profile) => profile.revealed);
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-center mb-8">Who is more impressive?</h1>
-      
+      <h1 className="text-2xl font-bold text-center mb-8">
+        Who is more impressive?
+      </h1>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {profiles.map((profile) => (
           <div key={profile.id} className="relative">
             <button
-              className={`w-full h-full ${selectedProfileId === profile.id ? 'ring-4 ring-blue-500' : ''}`}
+              className={`w-full h-full ${
+                selectedProfileId === profile.id ? "ring-4 ring-blue-500" : ""
+              }`}
               onClick={() => !allRevealed && handleVote(profile.id)}
               disabled={isVoting || allRevealed}
             >
               <ProfileCard {...profile} />
             </button>
-            
+
             {selectedProfileId === profile.id && !allRevealed && (
               <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded-full text-sm">
                 Selected
@@ -163,7 +171,7 @@ const VotingInterface: React.FC = () => {
           </div>
         ))}
       </div>
-      
+
       <div className="flex justify-center">
         {allRevealed ? (
           <button

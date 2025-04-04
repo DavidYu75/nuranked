@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Image from 'next/image';
-import DefaultAvatar from './DefaultAvatar';
+import React, { useState } from "react";
+import Image from "next/image";
+import DefaultAvatar from "./DefaultAvatar";
 
 interface Experience {
   title: string;
@@ -39,7 +39,7 @@ const ProfileCard: React.FC<ProfileProps> = ({
   match_count,
   linkedin_url,
   github_url,
-  revealed
+  revealed,
 }) => {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden max-w-md mx-auto">
@@ -49,9 +49,9 @@ const ProfileCard: React.FC<ProfileProps> = ({
           <div className="h-16 w-16 mr-4">
             {revealed ? (
               // If profile is revealed and we have a photo URL, try to use it
-              photo_url && photo_url.startsWith('/') ? (
+              photo_url && photo_url.startsWith("/") ? (
                 <div className="h-16 w-16 rounded-full overflow-hidden">
-                  <Image 
+                  <Image
                     src={photo_url}
                     alt={name}
                     width={64}
@@ -61,8 +61,11 @@ const ProfileCard: React.FC<ProfileProps> = ({
                 </div>
               ) : (
                 // Otherwise use our default avatar component with initials
-                <DefaultAvatar 
-                  initials={name.split(' ').map(n => n[0]).join('')}
+                <DefaultAvatar
+                  initials={name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")}
                   size={64}
                 />
               )
@@ -73,7 +76,7 @@ const ProfileCard: React.FC<ProfileProps> = ({
               </div>
             )}
           </div>
-          
+
           <div>
             {revealed ? (
               <h2 className="text-xl font-bold">{name}</h2>
@@ -85,7 +88,7 @@ const ProfileCard: React.FC<ProfileProps> = ({
             </p>
           </div>
         </div>
-        
+
         {/* Experiences */}
         <div className="mb-4">
           <h3 className="font-bold text-lg mb-2">Experience</h3>
@@ -93,13 +96,15 @@ const ProfileCard: React.FC<ProfileProps> = ({
             {experiences.map((exp, index) => (
               <div key={index} className="border-l-2 border-blue-500 pl-3">
                 <p className="font-medium">{exp.title}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{exp.company}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {exp.company}
+                </p>
                 <p className="text-sm mt-1">{exp.description}</p>
               </div>
             ))}
           </div>
         </div>
-        
+
         {/* Education */}
         <div className="mb-4">
           <h3 className="font-bold text-lg mb-2">Education</h3>
@@ -110,7 +115,7 @@ const ProfileCard: React.FC<ProfileProps> = ({
             </p>
           </div>
         </div>
-        
+
         {/* Stats */}
         {revealed && (
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -122,14 +127,14 @@ const ProfileCard: React.FC<ProfileProps> = ({
                 <span className="font-bold">Matches:</span> {match_count}
               </div>
             </div>
-            
+
             {/* Links */}
             {(linkedin_url || github_url) && (
               <div className="mt-3 flex space-x-3">
                 {linkedin_url && (
-                  <a 
-                    href={linkedin_url} 
-                    target="_blank" 
+                  <a
+                    href={linkedin_url}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:underline text-sm"
                   >
@@ -137,9 +142,9 @@ const ProfileCard: React.FC<ProfileProps> = ({
                   </a>
                 )}
                 {github_url && (
-                  <a 
-                    href={github_url} 
-                    target="_blank" 
+                  <a
+                    href={github_url}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-600 hover:underline text-sm"
                   >

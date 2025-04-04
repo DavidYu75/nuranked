@@ -1,5 +1,5 @@
-import React from 'react';
-import ProfileCard, { ProfileProps } from './ProfileCard';
+import React from "react";
+import ProfileCard, { ProfileProps } from "./ProfileCard";
 
 interface ResultsDisplayProps {
   winnerProfile: ProfileProps;
@@ -10,7 +10,7 @@ interface ResultsDisplayProps {
 const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
   winnerProfile,
   loserProfile,
-  onContinue
+  onContinue,
 }) => {
   return (
     <div className="container mx-auto px-4 py-8">
@@ -18,7 +18,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
       <p className="text-center text-gray-600 dark:text-gray-400 mb-8">
         Names and photos are now revealed!
       </p>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="relative">
           <div className="absolute -top-4 -right-4 bg-green-500 text-white px-3 py-1 rounded-full shadow-lg text-sm font-bold z-10">
@@ -28,22 +28,24 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
             <ProfileCard {...winnerProfile} />
           </div>
         </div>
-        
+
         <div>
           <ProfileCard {...loserProfile} />
         </div>
       </div>
-      
+
       <div className="text-center bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-8">
         <h2 className="font-bold text-lg mb-2">ELO Rating Update</h2>
         <p>
-          <span className="font-medium">{winnerProfile.name}:</span> {winnerProfile.elo_rating - 8} → {winnerProfile.elo_rating} (+8)
+          <span className="font-medium">{winnerProfile.name}:</span>{" "}
+          {winnerProfile.elo_rating - 8} → {winnerProfile.elo_rating} (+8)
         </p>
         <p>
-          <span className="font-medium">{loserProfile.name}:</span> {loserProfile.elo_rating + 8} → {loserProfile.elo_rating} (-8)
+          <span className="font-medium">{loserProfile.name}:</span>{" "}
+          {loserProfile.elo_rating + 8} → {loserProfile.elo_rating} (-8)
         </p>
       </div>
-      
+
       <div className="flex justify-center">
         <button
           onClick={onContinue}

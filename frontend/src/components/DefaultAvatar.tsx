@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface DefaultAvatarProps {
   initials?: string;
@@ -8,27 +8,27 @@ interface DefaultAvatarProps {
 }
 
 const DefaultAvatar: React.FC<DefaultAvatarProps> = ({
-  initials = '?',
+  initials = "?",
   size = 64,
-  bgColor = '#3B82F6', // blue-500
-  textColor = '#FFFFFF'
+  bgColor = "#3B82F6", // blue-500
+  textColor = "#FFFFFF",
 }) => {
   // Generate initials if not provided
-  const displayInitials = initials || '?';
-  
+  const displayInitials = initials || "?";
+
   return (
-    <div 
+    <div
       style={{
         width: `${size}px`,
         height: `${size}px`,
         backgroundColor: bgColor,
         color: textColor,
-        borderRadius: '50%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        borderRadius: "50%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         fontSize: `${size / 2.5}px`,
-        fontWeight: 'bold'
+        fontWeight: "bold",
       }}
     >
       {displayInitials.substring(0, 2).toUpperCase()}
