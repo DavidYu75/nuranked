@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from ..models.profile import ProfileCreate, Profile
-from ..utils.auth import verify_password, get_password_hash, create_access_token, generate_verification_code
+from ..utils.auth import verify_password, get_password_hash, create_access_token, generate_verification_code, get_current_user
 from ..utils.database import profiles_collection
 from datetime import datetime
 from bson import ObjectId
@@ -69,32 +69,4 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         "profile_id": str(profile["_id"]),
         "name": profile.get("name", "")
     }
-
-# Modify the get_current_user function in auth.py to use profiles_collection
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    """Get current profile from JWT token"""
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    
-    try:
-        # Decode the JWT token
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-            
-        # Find the profile in the database
-        profile = await profiles_collection.find_one({"email": email})
-        if profile is None:
-            raise credentials_exception
-            
-        # Convert _id to string for serialization
-        profile["_id"] = str(profile["_id"])
-        return profile
-        
-    except jwt.JWTError:
-        raise credentials_exception
     
