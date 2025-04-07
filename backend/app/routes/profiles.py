@@ -1,8 +1,8 @@
-from fastapi import APIRouter, HTTPException, Body
+from fastapi import APIRouter, HTTPException, Body, Depends
 from ..models.profile import Profile, ProfileCreate
-from ..utils.auth import get_current_user
 from ..utils.database import profiles_collection
 from ..utils.elo import calculate_elo
+from ..utils.auth import get_current_user
 from typing import List
 import random
 from pydantic import BaseModel
@@ -25,6 +25,10 @@ async def get_random_profiles():
             raise HTTPException(status_code=404, detail="Not enough profiles in the database")
             
         selected_profiles = random.sample(all_profiles, 2)
+        
+        # Convert ObjectId to string for each profile
+        for profile in selected_profiles:
+            profile["_id"] = str(profile["_id"])
         
         return [Profile(**profile) for profile in selected_profiles]
     except Exception as e:
@@ -95,15 +99,35 @@ async def get_leaderboard():
     try:
         profiles = await profiles_collection.find().sort("elo_rating", -1).to_list(length=None)
         
+        # Convert ObjectId to string for each profile
+        for profile in profiles:
+            profile["_id"] = str(profile["_id"])
+        
         return [Profile(**profile) for profile in profiles]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/")
+@router.post("/", response_model=Profile)
 async def create_profile(profile: ProfileCreate, current_user = Depends(get_current_user)):
-    # Associate profile with user
-    profile_dict = profile.dict()
-    profile_dict["user_id"] = current_user["_id"]
+    """Submit a new profile"""
+    try:
+        profile_dict = profile.dict()
+        
+        # Set default values
+        profile_dict["elo_rating"] = 1500
+        profile_dict["match_count"] = 0
+        profile_dict["created_at"] = datetime.utcnow()
+        profile_dict["user_id"] = current_user["_id"]
+        profile_dict["is_northeastern_verified"] = current_user.get("is_northeastern_verified", False)
+        
+        result = await profiles_collection.insert_one(profile_dict)
+        
+        created_profile = await profiles_collection.find_one({"_id": result.inserted_id})
+        
+        created_profile["_id"] = str(created_profile["_id"])
+        
+        return created_profile
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create profile: {str(e)}")
     
-    result = await profiles_collection.insert_one(profile_dict)
-    return {"id": str(result.inserted_id), **profile_dict}

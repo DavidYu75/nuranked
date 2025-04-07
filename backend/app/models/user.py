@@ -12,3 +12,5 @@ class User(BaseModel):
     name: str
     hashed_password: str
     is_active: bool = True
+    is_northeastern_verified: bool = False
+    verification_code: Optional[str] = None
