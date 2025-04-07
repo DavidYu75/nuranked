@@ -163,7 +163,7 @@ async def verify_email(verification_data: VerificationRequest, current_user = De
     
     # Mark user as verified
     update_result = await profiles_collection.update_one(
-        {"_id": user["_id"]},
+        {"_id": ObjectId(user["_id"])},
         {
             "$set": {"is_northeastern_verified": True},
             "$unset": {"verification_code": ""}
