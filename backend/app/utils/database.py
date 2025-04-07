@@ -13,4 +13,3 @@ client = motor.motor_asyncio.AsyncIOMotorClient(MONGODB_URI)
 database = client[DATABASE_NAME]
 
 profiles_collection = database.profiles
-users_collection = database.users
