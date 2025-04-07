@@ -4,7 +4,7 @@ from jose import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
-from ..utils.database import users_collection
+from ..utils.database import profiles_collection
 from bson import ObjectId
 
 # Security configurations
@@ -51,13 +51,13 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
             raise credentials_exception
             
         # Find the user in the database
-        user = await users_collection.find_one({"email": email})
-        if user is None:
+        profile = await profiles_collection.find_one({"email": email})
+        if profile is None:
             raise credentials_exception
             
         # Convert _id to string for serialization
-        user["_id"] = str(user["_id"])
-        return user
+        profile["_id"] = str(profile["_id"])
+        return profile
         
     except jwt.JWTError:
         raise credentials_exception

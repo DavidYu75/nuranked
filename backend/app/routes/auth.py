@@ -1,94 +1,100 @@
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
-from fastapi.security import OAuth2PasswordRequestForm
-from ..models.user import UserCreate, User
-from ..utils.auth import (
-    verify_password, get_password_hash, create_access_token, 
-    generate_verification_code, get_current_user
-)
-from ..utils.database import users_collection
-from bson import ObjectId
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from ..models.profile import ProfileCreate, Profile
+from ..utils.auth import verify_password, get_password_hash, create_access_token, generate_verification_code
+from ..utils.database import profiles_collection
 from datetime import datetime
+from bson import ObjectId
 
 router = APIRouter()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 @router.post("/register")
-async def register_user(user_create: UserCreate):
-    """Register a new user"""
-    # Check if user exists
-    existing_user = await users_collection.find_one({"email": user_create.email})
-    if existing_user:
+async def register_profile(profile_create: ProfileCreate):
+    """Register a new profile with authentication"""
+    # Check if profile exists
+    existing_profile = await profiles_collection.find_one({"email": profile_create.email})
+    if existing_profile:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Create new user
-    hashed_password = get_password_hash(user_create.password)
-    user_dict = user_create.dict()
-    user_dict.pop("password")
-    user_dict["hashed_password"] = hashed_password
-    user_dict["is_northeastern_verified"] = False
-    user_dict["created_at"] = datetime.utcnow()
+    # Create new profile with authentication
+    profile_dict = profile_create.dict()
+    password = profile_dict.pop("password")
+    profile_dict["hashed_password"] = get_password_hash(password)
+    profile_dict["is_northeastern_verified"] = False
+    profile_dict["elo_rating"] = 1500
+    profile_dict["match_count"] = 0
+    profile_dict["created_at"] = datetime.utcnow()
     
-    result = await users_collection.insert_one(user_dict)
+    result = await profiles_collection.insert_one(profile_dict)
     
-    return {"id": str(result.inserted_id), "email": user_create.email, "name": user_create.name}
+    # Fetch the created document to ensure proper serialization
+    created_profile = await profiles_collection.find_one({"_id": result.inserted_id})
+    if not created_profile:
+        raise HTTPException(status_code=500, detail="Failed to retrieve created profile")
+    
+    # Manually create response dictionary with string ID
+    response = {
+        "id": str(created_profile["_id"]),
+        "email": created_profile["email"],
+        "name": created_profile["name"],
+        "photo_url": created_profile.get("photo_url", ""),
+        "experiences": created_profile.get("experiences", []),
+        "education": created_profile.get("education", {}),
+        "elo_rating": created_profile.get("elo_rating", 1500),
+        "match_count": created_profile.get("match_count", 0),
+        "linkedin_url": created_profile.get("linkedin_url", None),
+        "github_url": created_profile.get("github_url", None),
+        "is_northeastern_verified": created_profile.get("is_northeastern_verified", False)
+    }
+    
+    return response
 
 @router.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """Login and get access token"""
-    user = await users_collection.find_one({"email": form_data.username})
-    if not user or not verify_password(form_data.password, user["hashed_password"]):
+    profile = await profiles_collection.find_one({"email": form_data.username})
+    if not profile or not verify_password(form_data.password, profile["hashed_password"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    access_token = create_access_token(data={"sub": user["email"]})
+    access_token = create_access_token(data={"sub": profile["email"]})
     return {
         "access_token": access_token, 
         "token_type": "bearer",
-        "is_northeastern_verified": user.get("is_northeastern_verified", False),
-        "user_id": str(user["_id"]),
-        "name": user.get("name", "")
+        "is_northeastern_verified": profile.get("is_northeastern_verified", False),
+        "profile_id": str(profile["_id"]),
+        "name": profile.get("name", "")
     }
 
-@router.post("/request-verification")
-async def request_verification(current_user = Depends(get_current_user)):
-    """Request email verification"""
-    # Check if email is northeastern.edu
-    if not current_user["email"].endswith("@northeastern.edu"):
-        raise HTTPException(
-            status_code=400, 
-            detail="Verification requires a valid Northeastern University email address"
-        )
-    
-    # Generate verification code
-    verification_code = generate_verification_code()
-    
-    # Update user with verification code
-    await users_collection.update_one(
-        {"_id": ObjectId(current_user["_id"])},
-        {"$set": {"verification_code": verification_code}}
+# Modify the get_current_user function in auth.py to use profiles_collection
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    """Get current profile from JWT token"""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
     )
     
-    # For development, just print the code to console
-    print(f"VERIFICATION CODE for {current_user['email']}: {verification_code}")
+    try:
+        # Decode the JWT token
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+            
+        # Find the profile in the database
+        profile = await profiles_collection.find_one({"email": email})
+        if profile is None:
+            raise credentials_exception
+            
+        # Convert _id to string for serialization
+        profile["_id"] = str(profile["_id"])
+        return profile
+        
+    except jwt.JWTError:
+        raise credentials_exception
     
-    return {"message": "Verification code generated - check console for code"}
-
-@router.post("/verify-email")
-async def verify_email(verification_code: str, current_user = Depends(get_current_user)):
-    """Verify email with code"""
-    # Check verification code
-    if current_user.get("verification_code") != verification_code:
-        raise HTTPException(status_code=400, detail="Invalid verification code")
-    
-    # Mark user as verified
-    await users_collection.update_one(
-        {"_id": ObjectId(current_user["_id"])},
-        {
-            "$set": {"is_northeastern_verified": True},
-            "$unset": {"verification_code": ""}
-        }
-    )
-    
-    return {"message": "Email verified successfully"}

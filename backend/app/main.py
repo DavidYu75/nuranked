@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import profiles
-from .routes import auth
+from .routes import profiles, auth
 from .utils.database import database, profiles_collection
 
 app = FastAPI(title="Northeastern CS Ranked API")

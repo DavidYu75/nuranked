@@ -15,6 +15,7 @@ load_dotenv()
 
 from app.utils.database import MONGODB_URI, DATABASE_NAME
 from motor.motor_asyncio import AsyncIOMotorClient
+from app.utils.auth import get_password_hash
 
 async def generate_profiles(num_profiles=20):
     """Generate test profiles locally"""
@@ -57,8 +58,11 @@ async def generate_profiles(num_profiles=20):
         last_name = random.choice(last_names)
         full_name = f"{first_name} {last_name}"
         
-        # Create username from name
+        # Create username and email
         username = f"{first_name.lower()}{last_name.lower()}{random.randint(1, 99)}"
+        email = f"{username}@northeastern.edu"  # Make them all Northeastern emails
+        password = "password123"  # Default password for testing
+        hashed_password = get_password_hash(password)
         
         # Random photo
         gender = random.choice(["men", "women"])
@@ -86,6 +90,8 @@ async def generate_profiles(num_profiles=20):
         
         profile = {
             "name": full_name,
+            "email": email,
+            "hashed_password": hashed_password,
             "photo_url": f"https://randomuser.me/api/portraits/{gender}/{photo_number}.jpg",
             "experiences": experiences,
             "education": {
@@ -96,10 +102,12 @@ async def generate_profiles(num_profiles=20):
             "elo_rating": 1500,
             "match_count": 0,
             "linkedin_url": f"https://linkedin.com/in/{username}",
-            "github_url": f"https://github.com/{username}"
+            "github_url": f"https://github.com/{username}",
+            "is_northeastern_verified": False
         }
         
         profiles.append(profile)
+        print(f"Generated profile for {full_name} ({email}) with password: {password}")
     
     return profiles
 
