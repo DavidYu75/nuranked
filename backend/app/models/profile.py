@@ -31,6 +31,5 @@ class Profile(BaseModel):
     match_count: int = 0
     linkedin_url: Optional[str] = None
     github_url: Optional[str] = None
-    hashed_password: Optional[str] = None
     user_id: Optional[str] = None
     is_northeastern_verified: bool = False
