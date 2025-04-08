@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, Body
-from ..models.profile import Profile, Experience, Education
+from fastapi import APIRouter, HTTPException, Body, Depends
+from ..models.profile import Profile, ProfileCreate
 from ..utils.database import profiles_collection
 from ..utils.elo import calculate_elo
+from ..utils.auth import get_current_user, generate_verification_code
 from typing import List
 import random
 from pydantic import BaseModel
@@ -11,6 +12,9 @@ from datetime import datetime
 class VoteRequest(BaseModel):
     opponent_id: str
     result: float  # 1 for win, 0 for loss, 0.5 for draw
+
+class VerificationRequest(BaseModel):
+    verification_code: str
 
 router = APIRouter()
 
@@ -24,6 +28,10 @@ async def get_random_profiles():
             raise HTTPException(status_code=404, detail="Not enough profiles in the database")
             
         selected_profiles = random.sample(all_profiles, 2)
+        
+        # Convert ObjectId to string for each profile
+        for profile in selected_profiles:
+            profile["_id"] = str(profile["_id"])
         
         return [Profile(**profile) for profile in selected_profiles]
     except Exception as e:
@@ -94,28 +102,77 @@ async def get_leaderboard():
     try:
         profiles = await profiles_collection.find().sort("elo_rating", -1).to_list(length=None)
         
+        # Convert ObjectId to string for each profile
+        for profile in profiles:
+            profile["_id"] = str(profile["_id"])
+        
         return [Profile(**profile) for profile in profiles]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/", response_model=Profile)
-async def create_profile(profile: Profile):
-    """Submit a new profile"""
-    try:
-        profile_dict = profile.dict()
+async def create_profile(profile: ProfileCreate):
+    """Submit a new profile - redirected to auth/register"""
+    # This could just redirect to the register endpoint
+    raise HTTPException(status_code=307, headers={"Location": "/api/auth/register"})
+
+@router.post("/request-verification")
+async def request_verification(current_user = Depends(get_current_user)):
+    """Request email verification"""
+    # Check if email is northeastern.edu
+    if not current_user["email"].endswith("@northeastern.edu"):
+        raise HTTPException(
+            status_code=400, 
+            detail="Verification requires a valid Northeastern University email address"
+        )
+    
+    # Generate verification code
+    verification_code = generate_verification_code()
+    
+    # Update profile with verification code
+    await profiles_collection.update_one(
+        {"_id": ObjectId(current_user["_id"])},
+        {"$set": {"verification_code": verification_code}}
+    )
+    
+    # Print to console for development
+    print(f"VERIFICATION CODE for {current_user['email']}: {verification_code}")
+    
+    return {"message": "Verification code generated - check console for code"}
+
+@router.post("/verify-email")
+async def verify_email(verification_data: VerificationRequest, current_user = Depends(get_current_user)):
+    """Verify email with code"""
+    # Get fresh user data from database
+    print(f"Looking for user with ID: {current_user['_id']}")
+    user = await profiles_collection.find_one({"_id": ObjectId(current_user["_id"])})
+    if not user:
+        # Try without ObjectId conversion as fallback
+        user = await profiles_collection.find_one({"_id": current_user["_id"]})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
         
-        # Set default values
-        profile_dict["elo_rating"] = 1500
-        profile_dict["match_count"] = 0
-        profile_dict["created_at"] = datetime.utcnow()
-        
-        result = await profiles_collection.insert_one(profile_dict)
-        
-        created_profile = await profiles_collection.find_one({"_id": result.inserted_id})
-        
-        created_profile["_id"] = str(created_profile["_id"])
-        
-        return created_profile
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create profile: {str(e)}")
+    stored_code = user.get("verification_code")
+    
+    print(f"Received code: {verification_data.verification_code}")
+    print(f"Stored code: {stored_code}")
+    
+    # Check verification code
+    if not stored_code or stored_code != verification_data.verification_code:
+        raise HTTPException(status_code=400, detail="Invalid verification code")
+    
+    # Mark user as verified
+    update_result = await profiles_collection.update_one(
+        {"_id": ObjectId(user["_id"])},
+        {
+            "$set": {"is_northeastern_verified": True},
+            "$unset": {"verification_code": ""}
+        }
+    )
+    
+    if update_result.modified_count == 0:
+        raise HTTPException(status_code=500, detail="Failed to update verification status")
+    
+    return {"message": "Email verified successfully"}
+    
+    

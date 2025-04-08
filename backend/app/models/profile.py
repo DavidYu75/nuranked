@@ -11,8 +11,19 @@ class Education(BaseModel):
     major: str
     graduation_year: int
 
+class ProfileCreate(BaseModel):
+    name: str
+    email: str
+    password: str
+    photo_url: str
+    experiences: List[Experience]
+    education: Education
+    linkedin_url: Optional[str] = None
+    github_url: Optional[str] = None
+
 class Profile(BaseModel):
     name: str
+    email: str
     photo_url: str
     experiences: List[Experience]
     education: Education
@@ -20,3 +31,5 @@ class Profile(BaseModel):
     match_count: int = 0
     linkedin_url: Optional[str] = None
     github_url: Optional[str] = None
+    user_id: Optional[str] = None
+    is_northeastern_verified: bool = False

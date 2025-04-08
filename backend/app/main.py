@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import profiles
+from .routes import profiles, auth
 from .utils.database import database, profiles_collection
 
 app = FastAPI(title="Northeastern CS Ranked API")
@@ -15,6 +15,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
 app.include_router(profiles.router, prefix="/api/profiles", tags=["profiles"])
 
 @app.get("/")
