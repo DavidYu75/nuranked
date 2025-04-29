@@ -112,16 +112,15 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header showMiniLogo={showMiniLogo} />
-      <div className="flex flex-1 items-center justify-center mt-16">
-        <div ref={logoRef} className="relative flex items-center gap-6 left-4">
+      <div className="flex flex-1 items-center justify-center">
+        <div ref={logoRef} className="relative flex items-center gap-6 left-4 select-none z-0">
           <span className="text-6xl font-bold text-black font-docallisme">NU</span>
-          <SplineIcon className="w-10 h-10" style={{ minWidth: 40, minHeight: 40 }} />
+          <SplineIcon className="w-23 h-55" style={{ minWidth: 40, minHeight: 40 }} />
           <span className="text-6xl font-bold text-black font-docallisme">RANKED</span>
-          <div className="absolute right-0 -bottom-6 text-sm text-red-800 py-0.5  font-mono">F25</div>
         </div>
       </div>
-      <div className="w-full flex flex-col items-center mt-8">
-        <div className="w-full max-w-2xl">
+      <div className="w-full flex flex-col items-center mt-[-60] bg-white z-10 relative">
+        <div className="w-full max-w-2xl bg-white">
           {leaderboard.map((entry, idx) => (
             <div
               key={entry.id}
