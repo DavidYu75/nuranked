@@ -1,4 +1,8 @@
+"use client"
 import Header from "../src/Header";
+import React, { useEffect, useRef, useState } from "react";
+import dynamic from 'next/dynamic';
+const SplineIcon = dynamic(() => import('../src/SplineIcon'), { ssr: false });
 
 // Helper to get ordinal suffix
 function ordinal(n: number) {
@@ -91,13 +95,27 @@ const leaderboard = [
 ];
 
 export default function Home() {
+  const [showMiniLogo, setShowMiniLogo] = useState(false);
+  const logoRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onScroll() {
+      if (!logoRef.current) return;
+      const rect = logoRef.current.getBoundingClientRect();
+      setShowMiniLogo(rect.bottom <= 64); // 64px = header height
+    }
+    window.addEventListener("scroll", onScroll);
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
-      <div className="flex flex-1 items-center justify-center">
-        <div className="relative flex items-center gap-6 left-4">
+      <Header showMiniLogo={showMiniLogo} />
+      <div className="flex flex-1 items-center justify-center mt-16">
+        <div ref={logoRef} className="relative flex items-center gap-6 left-4">
           <span className="text-6xl font-bold text-black font-docallisme">NU</span>
-          <span className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center text-gray-500 text-xl select-none"></span>
+          <SplineIcon className="w-10 h-10" style={{ minWidth: 40, minHeight: 40 }} />
           <span className="text-6xl font-bold text-black font-docallisme">RANKED</span>
           <div className="absolute right-0 -bottom-6 text-sm text-red-800 py-0.5  font-mono">F25</div>
         </div>
