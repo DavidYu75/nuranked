@@ -46,7 +46,7 @@ export interface RegisterResponse {
 }
 
 export const registerUser = async (userData: ProfileCreate): Promise<RegisterResponse> => {
-  const response = await api.post('/register', userData);
+  const response = await api.post('/api/auth/register', userData);
   return response.data;
 };
 
@@ -55,7 +55,7 @@ export const loginUser = async (email: string, password: string): Promise<LoginR
   formData.append('username', email);
   formData.append('password', password);
   
-  const response = await api.post('/token', formData, {
+  const response = await api.post('/api/auth/token', formData, {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
