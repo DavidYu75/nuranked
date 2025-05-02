@@ -244,6 +244,14 @@ async def update_profile(
         protected_fields = ["_id", "email", "hashed_password", "is_northeastern_verified", "elo_rating", "match_count"]
         update_data = {k: v for k, v in profile_update.items() if k not in protected_fields}
         
+        # Handle base64 image (limit file size)
+        if "photo_url" in update_data and update_data["photo_url"].startswith("data:image"):
+            # Very basic check for reasonable size (roughly 10MB limit)
+            if len(update_data["photo_url"]) > 10 * 1024 * 1024:
+                raise HTTPException(status_code=400, detail="Image file too large (max 10MB)")
+            
+            print("Updated profile picture with base64 image")
+            
         # Apply updates
         result = await profiles_collection.update_one(
             {"_id": ObjectId(profile_id)},

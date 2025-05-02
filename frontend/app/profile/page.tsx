@@ -150,24 +150,72 @@ export default function ProfilePage() {
           </div>
 
           <div className="space-y-6">
-            <div className="flex items-center gap-6">
-              <img
-                src={profile.photo_url}
-                alt={profile.name}
-                className="w-24 h-24 object-cover border border-black"
-              />
-              {isEditing && (
-                <input
-                  type="text"
-                  name="photo_url"
-                  value={editedProfile?.photo_url || ''}
-                  onChange={handleChange}
-                  placeholder="Photo URL"
-                  className="flex-1 p-2 border border-black"
+            {/* Profile Picture and Stats Section */}
+            <div className="flex items-start gap-6">
+              {/* Profile Picture */}
+              <div className="w-32">
+                <img
+                  src={profile.photo_url}
+                  alt={profile.name}
+                  className="w-32 h-32 object-cover border border-black"
                 />
-              )}
+                {isEditing && (
+                  <div className="mt-2">
+                    <label htmlFor="photo-upload" className="block text-sm font-medium text-black mb-1">
+                      Change Photo
+                    </label>
+                    <input
+                      type="file"
+                      id="photo-upload"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (!editedProfile || !e.target.files || !e.target.files[0]) return;
+                        
+                        const file = e.target.files[0];
+                        const reader = new FileReader();
+                        
+                        reader.onloadend = () => {
+                          if (typeof reader.result === 'string') {
+                            setEditedProfile({
+                              ...editedProfile,
+                              photo_url: reader.result
+                            });
+                          }
+                        };
+                        
+                        reader.readAsDataURL(file);
+                      }}
+                      className="w-full text-sm text-black file:mr-2 file:py-1 file:px-2 file:border file:border-black file:bg-white file:text-black"
+                    />
+                  </div>
+                )}
+              </div>
+              
+              {/* Stats */}
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-black mb-1">
+                  Stats
+                </label>
+                <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 border border-gray-200">
+                  <div>
+                    <div className="text-sm text-gray-600">ELO Rating</div>
+                    <div className="text-xl font-mono text-black">{profile.elo_rating}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">Matches</div>
+                    <div className="text-xl font-mono text-black">{profile.match_count}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">Status</div>
+                    <div className="text-xl font-mono text-black">
+                      {profile.is_northeastern_verified ? '✓ Verified' : 'Unverified'}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
+            {/* Basic Info */}
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-black mb-1">
@@ -179,7 +227,7 @@ export default function ProfilePage() {
                     name="name"
                     value={editedProfile?.name || ''}
                     onChange={handleChange}
-                    className="w-full p-2 border border-black"
+                    className="w-full p-2 border border-black text-black"
                   />
                 ) : (
                   <div className="text-black">{profile.name}</div>
@@ -203,7 +251,7 @@ export default function ProfilePage() {
                     name="education.degree"
                     value={editedProfile?.education.degree || ''}
                     onChange={handleChange}
-                    className="w-full p-2 border border-black"
+                    className="w-full p-2 border border-black text-black"
                   />
                 ) : (
                   <div className="text-black">{profile.education.degree}</div>
@@ -220,7 +268,7 @@ export default function ProfilePage() {
                     name="education.major"
                     value={editedProfile?.education.major || ''}
                     onChange={handleChange}
-                    className="w-full p-2 border border-black"
+                    className="w-full p-2 border border-black text-black"
                   />
                 ) : (
                   <div className="text-black">{profile.education.major}</div>
@@ -237,7 +285,7 @@ export default function ProfilePage() {
                     name="education.graduation_year"
                     value={editedProfile?.education.graduation_year || ''}
                     onChange={handleChange}
-                    className="w-full p-2 border border-black"
+                    className="w-full p-2 border border-black text-black"
                   />
                 ) : (
                   <div className="text-black">{profile.education.graduation_year}</div>
@@ -254,7 +302,7 @@ export default function ProfilePage() {
                     name="linkedin_url"
                     value={editedProfile?.linkedin_url || ''}
                     onChange={handleChange}
-                    className="w-full p-2 border border-black"
+                    className="w-full p-2 border border-black text-black"
                   />
                 ) : (
                   <div className="text-black">
@@ -284,7 +332,7 @@ export default function ProfilePage() {
                     name="github_url"
                     value={editedProfile?.github_url || ''}
                     onChange={handleChange}
-                    className="w-full p-2 border border-black"
+                    className="w-full p-2 border border-black text-black"
                   />
                 ) : (
                   <div className="text-black">
@@ -305,27 +353,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-black mb-1">
-                Experiences
-              </label>
-              {profile.experiences && profile.experiences.length > 0 ? (
-                <div className="space-y-4">
-                  {profile.experiences.map((exp, index) => (
-                    <div key={index} className="p-4 border border-gray-200">
-                      <div className="font-medium">{exp.title}</div>
-                      <div className="text-gray-600">{exp.company}</div>
-                      <div className="text-sm mt-2">{exp.description}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-4 border border-gray-200 text-gray-500">
-                  No experiences added yet.
-                </div>
-              )}
-            </div>
-
+            {/* Clubs */}
             <div>
               <label className="block text-sm font-medium text-black mb-1">
                 Clubs
@@ -335,7 +363,7 @@ export default function ProfilePage() {
                   <p className="text-sm text-gray-600">Select your clubs in order of involvement (up to 3)</p>
                   {[0, 1, 2].map((index) => (
                     <div key={index} className="flex items-center">
-                      <span className="mr-2 font-medium">{index + 1}.</span>
+                      <span className="mr-2 font-medium text-black">{index + 1}.</span>
                       <select
                         value={editedProfile?.clubs[index]?.id || ""}
                         onChange={(e) => {
@@ -378,7 +406,7 @@ export default function ProfilePage() {
                             clubs: uniqueClubs
                           });
                         }}
-                        className="w-full p-2 border border-black"
+                        className="w-full p-2 border border-black text-black"
                       >
                         <option value="">-- Select a club --</option>
                         {clubs.map((club) => {
@@ -419,7 +447,7 @@ export default function ProfilePage() {
                                 className="w-10 h-10 object-contain mr-3" 
                               />
                               <div className="flex-1">
-                                <div className="font-medium">{clubDetails.name}</div>
+                                <div className="font-medium text-black">{clubDetails.name}</div>
                                 <a 
                                   href={clubDetails.url} 
                                   target="_blank" 
@@ -431,7 +459,7 @@ export default function ProfilePage() {
                               </div>
                             </div>
                           ) : (
-                            <div className="font-medium">{club.name}</div>
+                            <div className="font-medium text-black">{club.name}</div>
                           )}
                         </div>
                       );
@@ -445,26 +473,26 @@ export default function ProfilePage() {
               )}
             </div>
 
+            {/* Experiences */}
             <div>
               <label className="block text-sm font-medium text-black mb-1">
-                Stats
+                Experiences
               </label>
-              <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 border border-gray-200">
-                <div>
-                  <div className="text-sm text-gray-600">ELO Rating</div>
-                  <div className="text-xl font-mono text-black">{profile.elo_rating}</div>
+              {profile.experiences && profile.experiences.length > 0 ? (
+                <div className="space-y-4">
+                  {profile.experiences.map((exp, index) => (
+                    <div key={index} className="p-4 border border-gray-200">
+                      <div className="font-medium text-black">{exp.title}</div>
+                      <div className="text-gray-600">{exp.company}</div>
+                      <div className="text-sm mt-2 text-black">{exp.description}</div>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <div className="text-sm text-gray-600">Matches</div>
-                  <div className="text-xl font-mono text-black">{profile.match_count}</div>
+              ) : (
+                <div className="p-4 border border-gray-200 text-gray-500">
+                  No experiences added yet.
                 </div>
-                <div>
-                  <div className="text-sm text-gray-600">Status</div>
-                  <div className="text-xl font-mono text-black">
-                    {profile.is_northeastern_verified ? '✓ Verified' : 'Unverified'}
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
