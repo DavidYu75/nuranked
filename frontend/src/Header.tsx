@@ -44,7 +44,9 @@ export default function Header({ showMiniLogo }: { showMiniLogo?: boolean }) {
       <div className="flex-1 flex items-center justify-end">
         {authenticated ? (
           <div className="flex items-center gap-4">
-            <span className="text-base text-black font-medium">{username}</span>
+            <Link href="/profile" className="text-base text-black font-medium hover:text-gray-600">
+              {username}
+            </Link>
             <button 
               onClick={handleLogout}
               className="text-base text-black font-medium hover:text-gray-600"

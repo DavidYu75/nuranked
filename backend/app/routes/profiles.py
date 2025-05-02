@@ -174,5 +174,123 @@ async def verify_email(verification_data: VerificationRequest, current_user = De
         raise HTTPException(status_code=500, detail="Failed to update verification status")
     
     return {"message": "Email verified successfully"}
+
+@router.get("/{profile_id}", response_model=Profile)
+async def get_profile(profile_id: str, current_user = Depends(get_current_user)):
+    """Get a specific profile"""
+    try:
+        print(f"Attempting to fetch profile with ID: {profile_id}")
+        
+        try:
+            profile_oid = ObjectId(profile_id)
+        except Exception as e:
+            print(f"Error converting to ObjectId: {str(e)}")
+            raise HTTPException(status_code=400, detail=f"Invalid profile ID format: {str(e)}")
+
+        profile = await profiles_collection.find_one({"_id": profile_oid})
+        if not profile:
+            raise HTTPException(status_code=404, detail="Profile not found")
+        
+        # Convert ObjectId to string
+        profile["_id"] = str(profile["_id"])
+        
+        # Ensure all required fields exist with defaults
+        if "clubs" not in profile or profile["clubs"] is None:
+            profile["clubs"] = []
+            
+        if "experiences" not in profile or profile["experiences"] is None:
+            profile["experiences"] = []
+            
+        if "education" not in profile:
+            profile["education"] = {"degree": "", "major": "", "graduation_year": 2025}
+        elif "graduation_year" not in profile["education"]:
+            profile["education"]["graduation_year"] = 2025
+        
+        default_fields = {
+            "elo_rating": 1500,
+            "match_count": 0,
+            "linkedin_url": None,
+            "github_url": None,
+            "is_northeastern_verified": False,
+            "photo_url": profile.get("photo_url", "https://randomuser.me/api/portraits/lego/1.jpg")
+        }
+        
+        # Apply defaults if fields are missing
+        for field, default in default_fields.items():
+            if field not in profile or profile[field] is None:
+                profile[field] = default
+        
+        print(f"Profile being returned: {profile}")
+        return Profile(**profile)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Unexpected error in get_profile: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/{profile_id}", response_model=Profile)
+async def update_profile(
+    profile_id: str,
+    profile_update: dict = Body(...),
+    current_user = Depends(get_current_user)
+):
+    """Update a profile"""
+    try:
+        # Verify user is updating their own profile
+        if str(current_user["_id"]) != profile_id:
+            raise HTTPException(status_code=403, detail="Not authorized to update this profile")
+
+        # Remove fields that shouldn't be updated
+        protected_fields = ["_id", "email", "hashed_password", "is_northeastern_verified", "elo_rating", "match_count"]
+        update_data = {k: v for k, v in profile_update.items() if k not in protected_fields}
+        
+        # Apply updates
+        result = await profiles_collection.update_one(
+            {"_id": ObjectId(profile_id)},
+            {"$set": update_data}
+        )
+        
+        if result.modified_count == 0 and len(update_data) > 0:
+            print("Warning: No fields were updated")
+            
+        # Get updated profile
+        updated_profile = await profiles_collection.find_one({"_id": ObjectId(profile_id)})
+        if not updated_profile:
+            raise HTTPException(status_code=404, detail="Profile not found")
+            
+        updated_profile["_id"] = str(updated_profile["_id"])
+        
+        # Ensure all required fields exist with defaults
+        if "clubs" not in updated_profile or updated_profile["clubs"] is None:
+            updated_profile["clubs"] = []
+            
+        if "experiences" not in updated_profile or updated_profile["experiences"] is None:
+            updated_profile["experiences"] = []
+            
+        if "education" not in updated_profile:
+            updated_profile["education"] = {"degree": "", "major": "", "graduation_year": 2025}
+        elif "graduation_year" not in updated_profile["education"]:
+            updated_profile["education"]["graduation_year"] = 2025
+        
+        default_fields = {
+            "elo_rating": 1500,
+            "match_count": 0,
+            "linkedin_url": None,
+            "github_url": None,
+            "is_northeastern_verified": False,
+            "photo_url": updated_profile.get("photo_url", "https://randomuser.me/api/portraits/lego/1.jpg")
+        }
+        
+        # Apply defaults if fields are missing
+        for field, default in default_fields.items():
+            if field not in updated_profile or updated_profile[field] is None:
+                updated_profile[field] = default
+        
+        return Profile(**updated_profile)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Unexpected error in update_profile: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
     
     

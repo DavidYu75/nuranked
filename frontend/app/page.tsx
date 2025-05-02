@@ -2,7 +2,6 @@
 import Header from "../src/Header";
 import React, { useEffect, useRef, useState } from "react";
 import dynamic from 'next/dynamic';
-import { isAuthenticated, getCurrentUser } from "../src/services/auth";
 const SplineIcon = dynamic(() => import('../src/SplineIcon'), { ssr: false });
 
 // Helper to get ordinal suffix
@@ -97,24 +96,9 @@ const leaderboard = [
 
 export default function Home() {
   const [showMiniLogo, setShowMiniLogo] = useState(false);
-  const [authenticated, setAuthenticated] = useState(false);
-  const [user, setUser] = useState<{
-    profile_id: string;
-    name: string;
-    is_northeastern_verified: boolean;
-  } | null>(null);
   const logoRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Check authentication status
-    const authStatus = isAuthenticated();
-    setAuthenticated(authStatus);
-    
-    if (authStatus) {
-      const userData = getCurrentUser();
-      setUser(userData);
-    }
-
     // Handle logo visibility on scroll
     function onScroll() {
       if (!logoRef.current) return;
@@ -137,19 +121,6 @@ export default function Home() {
           <span className="text-6xl font-bold text-black font-docallisme">RANKED</span>
         </div>
       </div>
-      
-      {authenticated && user && (
-        <div className="w-full flex justify-center">
-          <div className="max-w-2xl w-full bg-gray-50 border border-black p-4 mb-4">
-            <h2 className="font-medium text-lg">Welcome back, {user.name}!</h2>
-            <p className="text-sm mt-2">
-              {user.is_northeastern_verified 
-                ? "Your Northeastern email has been verified." 
-                : "Please verify your Northeastern email to unlock all features."}
-            </p>
-          </div>
-        </div>
-      )}
       
       <div className="w-full flex flex-col items-center mt-[-60] bg-white z-10 relative">
         <div className="w-full max-w-2xl bg-white">
