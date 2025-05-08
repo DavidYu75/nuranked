@@ -4,7 +4,6 @@ from typing import List, Optional
 class Experience(BaseModel):
     title: str = ""
     company: str = ""
-    description: str = ""
 
 class Education(BaseModel):
     degree: str = ""
