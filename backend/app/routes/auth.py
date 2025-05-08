@@ -25,6 +25,13 @@ async def register_profile(profile_create: ProfileCreate):
     profile_dict["elo_rating"] = 1500
     profile_dict["match_count"] = 0
     profile_dict["created_at"] = datetime.utcnow()
+    profile_dict["linkedin_url"] = ""
+    profile_dict["github_url"] = ""
+    profile_dict["education"] = {"degree": "", "major": "", "graduation_year": 0}
+    profile_dict["is_northeastern_verified"] = False
+    profile_dict["photo_url"] = "https://randomuser.me/api/portraits/lego/1.jpg"
+    profile_dict["experiences"] = []
+    profile_dict["clubs"] = []
     
     result = await profiles_collection.insert_one(profile_dict)
     
@@ -38,14 +45,6 @@ async def register_profile(profile_create: ProfileCreate):
         "id": str(created_profile["_id"]),
         "email": created_profile["email"],
         "name": created_profile["name"],
-        "photo_url": created_profile.get("photo_url", ""),
-        "experiences": created_profile.get("experiences", []),
-        "education": created_profile.get("education", {}),
-        "elo_rating": created_profile.get("elo_rating", 1500),
-        "match_count": created_profile.get("match_count", 0),
-        "linkedin_url": created_profile.get("linkedin_url", None),
-        "github_url": created_profile.get("github_url", None),
-        "is_northeastern_verified": created_profile.get("is_northeastern_verified", False)
     }
     
     return response
