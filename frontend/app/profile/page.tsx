@@ -481,95 +481,141 @@ export default function ProfilePage() {
               </label>
               {isEditing ? (
                 <div className="space-y-3">
-                  <p className="text-sm text-gray-600">Add your professional experiences</p>
-                  {editedProfile?.experiences && editedProfile.experiences.map((exp, index) => (
-                    <div key={index} className="p-4 border border-gray-200 space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium text-black">Experience {index + 1}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!editedProfile) return;
-                            const newExperiences = [...editedProfile.experiences];
-                            newExperiences.splice(index, 1);
-                            setEditedProfile({
-                              ...editedProfile,
-                              experiences: newExperiences
-                            });
-                          }}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          Remove
-                        </button>
+                  <p className="text-sm text-gray-600">Add your professional experiences (up to 3)</p>
+                  {[0, 1, 2].map((index) => {
+                    const experience = editedProfile?.experiences && editedProfile.experiences[index];
+                    return (
+                      <div key={index} className="flex items-center mb-3">
+                        <span className="mr-2 font-medium text-black">{index + 1}.</span>
+                        <div className="flex-1 space-y-2 border border-black p-3">
+                          <div>
+                            <label className="block text-sm font-medium text-black mb-1">Title</label>
+                            <input
+                              type="text"
+                              value={experience?.title || ''}
+                              onChange={(e) => {
+                                if (!editedProfile) return;
+                                const newExperiences = [...(editedProfile.experiences || [])];
+                                
+                                if (e.target.value === "") {
+                                  // Remove this experience if title is empty
+                                  if (index < newExperiences.length) {
+                                    newExperiences.splice(index, 1);
+                                  }
+                                } else {
+                                  // Add or update experience
+                                  if (index < newExperiences.length) {
+                                    newExperiences[index] = {
+                                      ...newExperiences[index],
+                                      title: e.target.value
+                                    };
+                                  } else {
+                                    // Fill any gaps with empty experiences
+                                    while (newExperiences.length < index) {
+                                      newExperiences.push({ title: '', company: '' });
+                                    }
+                                    newExperiences.push({ title: e.target.value, company: '' });
+                                  }
+                                }
+                                
+                                setEditedProfile({
+                                  ...editedProfile,
+                                  experiences: newExperiences
+                                });
+                              }}
+                              className="w-full p-2 border border-black text-black"
+                              placeholder="Software Engineer"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-black mb-1">Company</label>
+                            <div className="flex items-center">
+                              {experience?.company && (
+                                <div className="w-8 h-8 mr-2 flex-shrink-0">
+                                  <img 
+                                    src={`https://logo.clearbit.com/${experience.company.toLowerCase().trim().replace(/(inc\.?|corp\.?|llc\.?|ltd\.?)$/i, '').trim().replace(/\s+/g, '')}.com`}
+                                    alt={experience.company}
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => {
+                                      // If logo fails to load, hide the image
+                                      (e.target as HTMLImageElement).style.display = 'none';
+                                    }}
+                                  />
+                                </div>
+                              )}
+                              <input
+                                type="text"
+                                value={experience?.company || ''}
+                                onChange={(e) => {
+                                  if (!editedProfile) return;
+                                  const newExperiences = [...(editedProfile.experiences || [])];
+                                  
+                                  if (index < newExperiences.length) {
+                                    newExperiences[index] = {
+                                      ...newExperiences[index],
+                                      company: e.target.value
+                                    };
+                                  } else if (e.target.value !== "") {
+                                    // Only add if there's a value
+                                    // Fill any gaps with empty experiences
+                                    while (newExperiences.length < index) {
+                                      newExperiences.push({ title: '', company: '' });
+                                    }
+                                    newExperiences.push({ title: '', company: e.target.value });
+                                  }
+                                  
+                                  setEditedProfile({
+                                    ...editedProfile,
+                                    experiences: newExperiences
+                                  });
+                                }}
+                                className="w-full p-2 border border-black text-black"
+                                placeholder="Google"
+                              />
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-black mb-1">Title</label>
-                        <input
-                          type="text"
-                          value={exp.title || ''}
-                          onChange={(e) => {
-                            if (!editedProfile) return;
-                            const newExperiences = [...editedProfile.experiences];
-                            newExperiences[index] = {
-                              ...newExperiences[index],
-                              title: e.target.value
-                            };
-                            setEditedProfile({
-                              ...editedProfile,
-                              experiences: newExperiences
-                            });
-                          }}
-                          className="w-full p-2 border border-black text-black"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-black mb-1">Company</label>
-                        <input
-                          type="text"
-                          value={exp.company || ''}
-                          onChange={(e) => {
-                            if (!editedProfile) return;
-                            const newExperiences = [...editedProfile.experiences];
-                            newExperiences[index] = {
-                              ...newExperiences[index],
-                              company: e.target.value
-                            };
-                            setEditedProfile({
-                              ...editedProfile,
-                              experiences: newExperiences
-                            });
-                          }}
-                          className="w-full p-2 border border-black text-black"
-                        />
-                      </div>
-
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!editedProfile) return;
-                      const newExperiences = [...(editedProfile.experiences || [])];
-                      newExperiences.push({ title: '', company: '' });
-                      setEditedProfile({
-                        ...editedProfile,
-                        experiences: newExperiences
-                      });
-                    }}
-                    className="px-4 py-2 bg-black text-white hover:bg-gray-800 mt-2"
-                  >
-                    Add Experience
-                  </button>
+                    );
+                  })}
                 </div>
               ) : (
                 profile.experiences && profile.experiences.length > 0 ? (
                   <div className="space-y-4">
-                    {profile.experiences.map((exp, index) => (
-                      <div key={index} className="p-4 border border-gray-200">
-                        <div className="font-medium text-black">{exp.title}</div>
-                        <div className="text-gray-600">{exp.company}</div>
-                      </div>
-                    ))}
+                    {profile.experiences.map((exp, index) => {
+                      // Extract domain from company name for logo
+                      const companyName = exp.company.toLowerCase().trim();
+                      // Remove common suffixes and spaces
+                      const simplifiedName = companyName
+                        .replace(/(inc\.?|corp\.?|llc\.?|ltd\.?)$/i, '')
+                        .trim()
+                        .replace(/\s+/g, '');
+                      
+                      // Create logo URL using Clearbit
+                      const logoUrl = `https://logo.clearbit.com/${simplifiedName}.com`;
+                      
+                      return (
+                        <div key={index} className="p-4 border border-gray-200">
+                          <div className="flex items-center">
+                            <div className="w-10 h-10 mr-3 flex-shrink-0">
+                              <img 
+                                src={logoUrl}
+                                alt={exp.company}
+                                className="w-full h-full object-contain"
+                                onError={(e) => {
+                                  // If logo fails to load, hide the image
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <div className="font-medium text-black">{exp.title}</div>
+                              <div className="text-gray-600">{exp.company}</div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="p-4 border border-gray-200 text-gray-500">
