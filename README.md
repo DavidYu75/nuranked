@@ -16,7 +16,7 @@ A web application that showcases exceptional engineering talent at Northeastern 
 - MongoDB
 
 ### 1. Setting up MongoDB
-```
+```bash
 # Install MongoDB using Homebrew (macOS)
 brew tap mongodb/brew
 brew install mongodb-community@6.0
@@ -32,7 +32,7 @@ mongosh
 ```
 
 ### 2. Setting up the backend
-```
+```bash
 # Navigate to backend directory
 cd nuranked/backend
 
@@ -49,6 +49,9 @@ pip install fastapi uvicorn motor pydantic python-dotenv
 echo "MONGODB_URI=mongodb://localhost:27017
 DATABASE_NAME=northeastern_ranked" > .env
 
+# Populate development database with test profiles
+python -m app.scripts.seed_database
+
 # Start the backend server
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
@@ -56,7 +59,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 The API documentation will be available at: http://localhost:8000/docs
 
 ### 3. Setting up the frontend
-```
+```bash
 # Navigate to frontend directory
 cd nuranked/frontend
 
