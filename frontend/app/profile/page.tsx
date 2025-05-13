@@ -6,6 +6,26 @@ import { getCurrentUser } from '../../src/services/auth';
 import { getProfile, updateProfile } from '../../src/services/api';
 import { clubs } from '../../src/data/clubs';
 
+const degreeOptions = [
+  // Associate degrees
+  "Associate of Arts (AA)",
+  "Associate of Science (AS)",
+  
+  // Bachelor's degrees
+  "Bachelor of Arts (BA)",
+  "Bachelor of Science (BS)",
+  
+  // Master's degrees
+  "Master of Arts (MA)",
+  "Master of Science (MS)",
+  "Master of Business Administration (MBA)",
+  
+  // Doctoral degrees
+  "Doctor of Philosophy (PhD)",
+  "Doctor of Medicine (MD)",
+  "Juris Doctor (JD)"
+];
+
 interface ProfileData {
   name: string;
   email: string;
@@ -247,13 +267,19 @@ export default function ProfilePage() {
                   Degree
                 </label>
                 {isEditing ? (
-                  <input
-                    type="text"
+                  <select
                     name="education.degree"
                     value={editedProfile?.education.degree || ''}
                     onChange={handleChange}
                     className="w-full p-2 border border-black text-black"
-                  />
+                  >
+                    <option value="">Select a degree</option>
+                    {degreeOptions.map((degree) => (
+                      <option key={degree} value={degree}>
+                        {degree}
+                      </option>
+                    ))}
+                  </select>
                 ) : (
                   <div className="text-black">{profile.education.degree}</div>
                 )}
