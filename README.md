@@ -46,8 +46,15 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install fastapi uvicorn motor pydantic python-dotenv
 
 # Create .env file with database configuration
-echo "MONGODB_URI=mongodb://localhost:27017
-DATABASE_NAME=northeastern_ranked" > .env
+cat > .env << EOL
+# .env.production
+MONGODB_URI=mongodb://localhost:27017
+DATABASE_NAME=northeastern_ranked
+
+# .env.development
+MONGODB_URI=mongodb://localhost:27017
+DATABASE_NAME=northeastern_ranked_development
+EOL
 
 # Populate development database with test profiles
 python -m app.scripts.seed_database
