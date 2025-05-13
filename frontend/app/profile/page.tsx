@@ -537,8 +537,8 @@ export default function ProfilePage() {
                                     alt={experience.company}
                                     className="w-full h-full object-contain"
                                     onError={(e) => {
-                                      // If logo fails to load, hide the image
-                                      (e.target as HTMLImageElement).style.display = 'none';
+                                      // If logo fails to load, use placeholder
+                                      (e.target as HTMLImageElement).src = '/images/company-placeholder.svg';
                                     }}
                                   />
                                 </div>
@@ -603,8 +603,8 @@ export default function ProfilePage() {
                                 alt={exp.company}
                                 className="w-full h-full object-contain"
                                 onError={(e) => {
-                                  // If logo fails to load, hide the image
-                                  (e.target as HTMLImageElement).style.display = 'none';
+                                  // If logo fails to load, use placeholder
+                                  (e.target as HTMLImageElement).src = '/images/company-placeholder.svg';
                                 }}
                               />
                             </div>
