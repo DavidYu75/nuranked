@@ -20,7 +20,7 @@ interface ProfileData {
   github_url?: string;
   elo_rating: number;
   match_count: number;
-  experiences: { title: string; company: string; description: string }[];
+  experiences: { title: string; company: string }[];
   is_northeastern_verified: boolean;
 }
 
@@ -66,10 +66,11 @@ export default function ProfilePage() {
       const user = getCurrentUser();
       if (!user) return;
 
-      // Filter out any empty club entries
+      // Filter out any empty club entries and experience entries
       const cleanedProfile = {
         ...editedProfile,
-        clubs: editedProfile.clubs.filter(club => club.id !== "")
+        clubs: editedProfile.clubs.filter(club => club.id !== ""),
+        experiences: editedProfile.experiences.filter(exp => exp.title.trim() !== "" || exp.company.trim() !== "")
       };
 
       await updateProfile(user.profile_id, cleanedProfile);
@@ -478,20 +479,103 @@ export default function ProfilePage() {
               <label className="block text-sm font-medium text-black mb-1">
                 Experiences
               </label>
-              {profile.experiences && profile.experiences.length > 0 ? (
-                <div className="space-y-4">
-                  {profile.experiences.map((exp, index) => (
-                    <div key={index} className="p-4 border border-gray-200">
-                      <div className="font-medium text-black">{exp.title}</div>
-                      <div className="text-gray-600">{exp.company}</div>
-                      <div className="text-sm mt-2 text-black">{exp.description}</div>
+              {isEditing ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-600">Add your professional experiences</p>
+                  {editedProfile?.experiences && editedProfile.experiences.map((exp, index) => (
+                    <div key={index} className="p-4 border border-gray-200 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-black">Experience {index + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!editedProfile) return;
+                            const newExperiences = [...editedProfile.experiences];
+                            newExperiences.splice(index, 1);
+                            setEditedProfile({
+                              ...editedProfile,
+                              experiences: newExperiences
+                            });
+                          }}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-black mb-1">Title</label>
+                        <input
+                          type="text"
+                          value={exp.title || ''}
+                          onChange={(e) => {
+                            if (!editedProfile) return;
+                            const newExperiences = [...editedProfile.experiences];
+                            newExperiences[index] = {
+                              ...newExperiences[index],
+                              title: e.target.value
+                            };
+                            setEditedProfile({
+                              ...editedProfile,
+                              experiences: newExperiences
+                            });
+                          }}
+                          className="w-full p-2 border border-black text-black"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-black mb-1">Company</label>
+                        <input
+                          type="text"
+                          value={exp.company || ''}
+                          onChange={(e) => {
+                            if (!editedProfile) return;
+                            const newExperiences = [...editedProfile.experiences];
+                            newExperiences[index] = {
+                              ...newExperiences[index],
+                              company: e.target.value
+                            };
+                            setEditedProfile({
+                              ...editedProfile,
+                              experiences: newExperiences
+                            });
+                          }}
+                          className="w-full p-2 border border-black text-black"
+                        />
+                      </div>
+
                     </div>
                   ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!editedProfile) return;
+                      const newExperiences = [...(editedProfile.experiences || [])];
+                      newExperiences.push({ title: '', company: '' });
+                      setEditedProfile({
+                        ...editedProfile,
+                        experiences: newExperiences
+                      });
+                    }}
+                    className="px-4 py-2 bg-black text-white hover:bg-gray-800 mt-2"
+                  >
+                    Add Experience
+                  </button>
                 </div>
               ) : (
-                <div className="p-4 border border-gray-200 text-gray-500">
-                  No experiences added yet.
-                </div>
+                profile.experiences && profile.experiences.length > 0 ? (
+                  <div className="space-y-4">
+                    {profile.experiences.map((exp, index) => (
+                      <div key={index} className="p-4 border border-gray-200">
+                        <div className="font-medium text-black">{exp.title}</div>
+                        <div className="text-gray-600">{exp.company}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 border border-gray-200 text-gray-500">
+                    No experiences added yet.
+                  </div>
+                )
               )}
             </div>
           </div>
