@@ -255,6 +255,16 @@ async def update_profile(
         protected_fields = ["_id", "email", "hashed_password", "is_northeastern_verified", "elo_rating", "match_count"]
         update_data = {k: v for k, v in profile_update.items() if k not in protected_fields}
         
+        # Validate LinkedIn URL
+        if "linkedin_url" in update_data and update_data["linkedin_url"]:
+            if not update_data["linkedin_url"].startswith("https://linkedin"):
+                raise HTTPException(status_code=400, detail="LinkedIn URL must start with 'https://linkedin'")
+        
+        # Validate GitHub URL
+        if "github_url" in update_data and update_data["github_url"]:
+            if not update_data["github_url"].startswith("https://github"):
+                raise HTTPException(status_code=400, detail="GitHub URL must start with 'https://github'")
+        
         # Handle base64 image (limit file size)
         if "photo_url" in update_data and update_data["photo_url"].startswith("data:image"):
             # Very basic check for reasonable size (roughly 10MB limit)
@@ -311,5 +321,3 @@ async def update_profile(
     except Exception as e:
         print(f"Unexpected error in update_profile: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-    
-    

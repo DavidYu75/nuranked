@@ -56,6 +56,10 @@ export default function ProfilePage() {
   const [editedProfile, setEditedProfile] = useState<ProfileData | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [validationErrors, setValidationErrors] = useState<{
+    linkedin_url?: string;
+    github_url?: string;
+  }>({});
   
   // Get profile ID from URL and current user after component mounts
   useEffect(() => {
@@ -152,6 +156,31 @@ export default function ProfilePage() {
     try {
       const user = getCurrentUser();
       if (!user) return;
+
+      // Reset validation errors
+      const errors: {linkedin_url?: string; github_url?: string} = {};
+      let hasErrors = false;
+
+      // Validate LinkedIn URL
+      if (editedProfile.linkedin_url && !editedProfile.linkedin_url.startsWith('https://linkedin')) {
+        errors.linkedin_url = 'LinkedIn URL must start with "https://linkedin"';
+        hasErrors = true;
+      }
+
+      // Validate GitHub URL
+      if (editedProfile.github_url && !editedProfile.github_url.startsWith('https://github')) {
+        errors.github_url = 'GitHub URL must start with "https://github"';
+        hasErrors = true;
+      }
+
+      // If there are validation errors, update state and return
+      if (hasErrors) {
+        setValidationErrors(errors);
+        return;
+      }
+
+      // Clear any previous validation errors
+      setValidationErrors({});
 
       // Filter out any empty club entries and experience entries
       const cleanedProfile = {
@@ -397,13 +426,19 @@ export default function ProfilePage() {
                   LinkedIn URL
                 </label>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    name="linkedin_url"
-                    value={editedProfile?.linkedin_url || ''}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-black text-black"
-                  />
+                  <div>
+                    <input
+                      type="text"
+                      name="linkedin_url"
+                      value={editedProfile?.linkedin_url || ''}
+                      onChange={handleChange}
+                      className={`w-full p-2 border ${validationErrors.linkedin_url ? 'border-red-500' : 'border-black'} text-black`}
+                      placeholder="https://linkedin.com/in/yourprofile"
+                    />
+                    {validationErrors.linkedin_url && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.linkedin_url}</p>
+                    )}
+                  </div>
                 ) : (
                   <div className="text-black">
                     {profile.linkedin_url ? (
@@ -427,13 +462,19 @@ export default function ProfilePage() {
                   GitHub URL
                 </label>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    name="github_url"
-                    value={editedProfile?.github_url || ''}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-black text-black"
-                  />
+                  <div>
+                    <input
+                      type="text"
+                      name="github_url"
+                      value={editedProfile?.github_url || ''}
+                      onChange={handleChange}
+                      className={`w-full p-2 border ${validationErrors.github_url ? 'border-red-500' : 'border-black'} text-black`}
+                      placeholder="https://github.com/yourusername"
+                    />
+                    {validationErrors.github_url && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.github_url}</p>
+                    )}
+                  </div>
                 ) : (
                   <div className="text-black">
                     {profile.github_url ? (
