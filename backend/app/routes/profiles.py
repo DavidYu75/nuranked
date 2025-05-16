@@ -8,9 +8,11 @@ import random
 from pydantic import BaseModel
 from bson import ObjectId
 from datetime import datetime
+from urllib.parse import urlparse
+import re
 
 def validate_url(url: str, url_type: str = None) -> bool:
-    """Validate URL format
+    """Validate URL format using urllib.parse and regex patterns
     
     Args:
         url: The URL to validate
@@ -19,17 +21,39 @@ def validate_url(url: str, url_type: str = None) -> bool:
     Returns:
         bool: True if URL is valid, False otherwise
     """
-    # Basic validation - must start with https://
-    if not url.startswith("https://"):
-        return False
+    # Skip validation for empty URLs
+    if not url:
+        return True
         
-    # Type-specific validation if needed
-    if url_type == "linkedin" and not ("linkedin.com" in url or url.startswith("https://linkedin")):
-        return False
-    elif url_type == "github" and not ("github.com" in url or url.startswith("https://github")):
-        return False
+    # Parse the URL
+    try:
+        parsed_url = urlparse(url)
         
-    return True
+        # Check for required components of a valid URL
+        if not all([parsed_url.scheme, parsed_url.netloc]):
+            return False
+            
+        # Ensure HTTPS protocol
+        if parsed_url.scheme != 'https':
+            return False
+            
+        # Type-specific validation with regex patterns
+        if url_type == "linkedin":
+            # Match linkedin.com/in/username or linkedin.com/company/companyname patterns
+            linkedin_pattern = r'^https://(?:www\.)?linkedin\.com/(?:in/[\w\-]+|company/[\w\-]+)/?.*$'
+            return bool(re.match(linkedin_pattern, url))
+            
+        elif url_type == "github":
+            # Match github.com/username or github.com/username/repo patterns
+            github_pattern = r'^https://(?:www\.)?github\.com/[\w\-]+(?:/[\w\-\.]+)?/?.*$'
+            return bool(re.match(github_pattern, url))
+            
+        # For general URLs, just ensure it has a valid structure
+        return True
+        
+    except Exception:
+        # If URL parsing fails for any reason
+        return False
 
 class VoteRequest(BaseModel):
     opponent_id: str
