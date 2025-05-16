@@ -59,7 +59,7 @@ export const voteProfile = async (profileId: string) => {
 };
 
 export const getLeaderboard = async () => {
-  const response = await api.get('/api/leaderboard');
+  const response = await api.get('/api/profiles/leaderboard');
   return response.data;
 };
 

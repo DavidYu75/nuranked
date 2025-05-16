@@ -2,100 +2,32 @@
 import Header from "../src/Header";
 import React, { useEffect, useRef, useState } from "react";
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
+import { getLeaderboard } from "../src/services/api";
+import { clubs } from "../src/data/clubs";
 const SplineIcon = dynamic(() => import('../src/SplineIcon'), { ssr: false });
 
-// Helper to get ordinal suffix
-function ordinal(n: number) {
-  const s = ["th", "st", "nd", "rd"], v = n % 100;
-  return n + (s[(v - 20) % 10] || s[v] || s[0]);
-}
 
-// Dummy data for leaderboard
-const leaderboard = [
-  {
-    id: 1,
-    name: "Alice Smith",
-    year: 1,
-    clubs: ["🏀", "💻", "🎨"],
-    elo: 1520,
-    img: "https://randomuser.me/api/portraits/women/1.jpg",
-  },
-  {
-    id: 2,
-    name: "Bob Johnson",
-    year: 2,
-    clubs: ["🎵", "📚"],
-    elo: 1480,
-    img: "https://randomuser.me/api/portraits/men/2.jpg",
-  },
-  {
-    id: 3,
-    name: "Carol Lee",
-    year: 3,
-    clubs: ["🤖", "🏊"],
-    elo: 1450,
-    img: "https://randomuser.me/api/portraits/women/3.jpg",
-  },
-  {
-    id: 4,
-    name: "David Kim",
-    year: 4,
-    clubs: ["🎮", "🎸"],
-    elo: 1430,
-    img: "https://randomuser.me/api/portraits/men/4.jpg",
-  },
-  {
-    id: 5,
-    name: "Eva Green",
-    year: 2,
-    clubs: ["🎤", "🧩"],
-    elo: 1410,
-    img: "https://randomuser.me/api/portraits/women/5.jpg",
-  },
-  {
-    id: 6,
-    name: "Frank Lee",
-    year: 5,
-    clubs: ["🧑‍🔬", "🏸"],
-    elo: 1390,
-    img: "https://randomuser.me/api/portraits/men/6.jpg",
-  },
-  {
-    id: 7,
-    name: "Grace Park",
-    year: 1,
-    clubs: ["🎭", "🧗"],
-    elo: 1370,
-    img: "https://randomuser.me/api/portraits/women/7.jpg",
-  },
-  {
-    id: 8,
-    name: "Henry Ford",
-    year: 3,
-    clubs: ["🚴", "🎬"],
-    elo: 1350,
-    img: "https://randomuser.me/api/portraits/men/8.jpg",
-  },
-  {
-    id: 9,
-    name: "Ivy Chen",
-    year: 4,
-    clubs: ["🎹", "🧘"],
-    elo: 1330,
-    img: "https://randomuser.me/api/portraits/women/9.jpg",
-  },
-  {
-    id: 10,
-    name: "Jack Black",
-    year: 2,
-    clubs: ["🏓", "🎲"],
-    elo: 1310,
-    img: "https://randomuser.me/api/portraits/men/10.jpg",
-  },
-];
+// Interface for leaderboard entry from the API
+interface LeaderboardEntry {
+  id?: string;
+  _id?: string;
+  name: string;
+  education?: {
+    graduation_year?: number;
+  };
+  clubs?: {
+    id: string;
+    name: string;
+  }[];
+  elo_rating: number;
+  photo_url?: string;
+}
 
 export default function Home() {
   const [showMiniLogo, setShowMiniLogo] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const logoRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -111,6 +43,38 @@ export default function Home() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Fetch leaderboard data from API
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        setLoading(true);
+        const data = await getLeaderboard();
+        // Debug the data structure
+        console.log('Leaderboard data:', data);
+        
+        // Ensure each entry has an id
+        const processedData = data.map((entry: LeaderboardEntry, index: number) => {
+          // If the entry doesn't have an id or it's undefined, use _id or generate one
+          if (!entry.id) {
+            return {
+              ...entry,
+              id: entry._id || `generated-id-${index}`
+            };
+          }
+          return entry;
+        });
+        
+        setLeaderboard(processedData);
+      } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeaderboard();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header showMiniLogo={showMiniLogo} />
@@ -124,32 +88,61 @@ export default function Home() {
       
       <div className="w-full flex flex-col items-center mt-[-60] bg-white z-10 relative">
         <div className="w-full max-w-2xl bg-white">
-          {leaderboard.map((entry, idx) => (
-            <div
-              key={entry.id}
-              className={`flex items-center border border-black bg-white${idx === 0 ? ' border-t' : ' border-t-0'}`}
-            >
-              <div className="w-10 flex justify-center items-center px-2 py-2 font-mono text-black font-semibold">
-                {idx + 1}
+          {loading ? (
+            <div key="loading" className="p-8 text-center text-black">Loading leaderboard...</div>
+          ) : leaderboard.length === 0 ? (
+            <div key="empty" className="p-8 text-center text-black">No leaderboard data available.</div>
+          ) : (
+            leaderboard.map((entry, idx) => (
+              <div
+                key={`leaderboard-entry-${entry.id || idx}`}
+                className={`flex items-center border border-black bg-white${idx === 0 ? ' border-t' : ' border-t-0'}`}
+              >
+                <div className="w-10 flex justify-center items-center px-2 py-2 font-mono text-black font-semibold">
+                  {idx + 1}
+                </div>
+                <div className="w-16 flex justify-center items-center px-2 py-2">
+                  <div className="w-12 h-12 border border-black relative">
+                    <Image
+                      src={entry.photo_url || '/images/profile-placeholder.png'}
+                      alt={entry.name}
+                      fill
+                      sizes="48px"
+                      style={{ objectFit: 'cover' }}
+                    />
+                  </div>
+                </div>
+                <div className="flex-1 px-2 py-2 text-black">{entry.name}</div>
+                <div className="w-28 px-2 py-2 text-black">
+                  {entry.education?.graduation_year ? `Class: ${entry.education.graduation_year}` : 'Class: N/A'}
+                </div>
+                <div className="w-32 px-2 py-2 text-black flex gap-1">
+                  {entry.clubs && entry.clubs.map((club) => {
+                    // Find the club in our clubs data to get the logo
+                    const clubData = clubs.find(c => c.id === club.id);
+                    return (
+                      <div key={club.id} className="w-6 h-6 relative" title={club.name}>
+                        {clubData ? (
+                          <Image
+                            src={clubData.logo}
+                            alt={club.name}
+                            fill
+                            sizes="24px"
+                            style={{ objectFit: 'contain' }}
+                          />
+                        ) : (
+                          <div className="w-6 h-6 bg-gray-200 flex items-center justify-center text-xs">
+                            {club.name.substring(0, 1)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="w-20 px-2 py-2 text-lg font-mono text-black text-right">{entry.elo_rating}</div>
               </div>
-              <div className="w-16 flex justify-center items-center px-2 py-2">
-                <img
-                  src={entry.img}
-                  alt={entry.name}
-                  className="w-12 h-12 object-cover border border-black"
-                  style={{ borderRadius: 0 }}
-                />
-              </div>
-              <div className="flex-1 px-2 py-2 text-black">{entry.name}</div>
-              <div className="w-20 px-2 py-2 text-black">{ordinal(entry.year)}</div>
-              <div className="w-32 px-2 py-2 text-black flex gap-1">
-                {entry.clubs.map((icon, i) => (
-                  <span key={i}>{icon}</span>
-                ))}
-              </div>
-              <div className="w-20 px-2 py-2 text-lg font-mono text-black text-right">{entry.elo}</div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
