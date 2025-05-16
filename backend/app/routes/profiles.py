@@ -9,6 +9,28 @@ from pydantic import BaseModel
 from bson import ObjectId
 from datetime import datetime
 
+def validate_url(url: str, url_type: str = None) -> bool:
+    """Validate URL format
+    
+    Args:
+        url: The URL to validate
+        url_type: Optional type of URL ('linkedin', 'github', etc.)
+        
+    Returns:
+        bool: True if URL is valid, False otherwise
+    """
+    # Basic validation - must start with https://
+    if not url.startswith("https://"):
+        return False
+        
+    # Type-specific validation if needed
+    if url_type == "linkedin" and not ("linkedin.com" in url or url.startswith("https://linkedin")):
+        return False
+    elif url_type == "github" and not ("github.com" in url or url.startswith("https://github")):
+        return False
+        
+    return True
+
 class VoteRequest(BaseModel):
     opponent_id: str
     result: float  # 1 for win, 0 for loss, 0.5 for draw
