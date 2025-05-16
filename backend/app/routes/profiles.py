@@ -8,6 +8,52 @@ import random
 from pydantic import BaseModel
 from bson import ObjectId
 from datetime import datetime
+from urllib.parse import urlparse
+import re
+
+def validate_url(url: str, url_type: str = None) -> bool:
+    """Validate URL format using urllib.parse and regex patterns
+    
+    Args:
+        url: The URL to validate
+        url_type: Optional type of URL ('linkedin', 'github', etc.)
+        
+    Returns:
+        bool: True if URL is valid, False otherwise
+    """
+    # Skip validation for empty URLs
+    if not url:
+        return True
+        
+    # Parse the URL
+    try:
+        parsed_url = urlparse(url)
+        
+        # Check for required components of a valid URL
+        if not all([parsed_url.scheme, parsed_url.netloc]):
+            return False
+            
+        # Ensure HTTPS protocol
+        if parsed_url.scheme != 'https':
+            return False
+            
+        # Type-specific validation with regex patterns
+        if url_type == "linkedin":
+            # Match linkedin.com/in/username or linkedin.com/company/companyname patterns
+            linkedin_pattern = r'^https://(?:www\.)?linkedin\.com/(?:in/[\w\-]+|company/[\w\-]+)/?.*$'
+            return bool(re.match(linkedin_pattern, url))
+            
+        elif url_type == "github":
+            # Match github.com/username or github.com/username/repo patterns
+            github_pattern = r'^https://(?:www\.)?github\.com/[\w\-]+(?:/[\w\-\.]+)?/?.*$'
+            return bool(re.match(github_pattern, url))
+            
+        # For general URLs, just ensure it has a valid structure
+        return True
+        
+    except Exception:
+        # If URL parsing fails for any reason
+        return False
 
 class VoteRequest(BaseModel):
     opponent_id: str
@@ -103,10 +149,21 @@ async def get_leaderboard():
         profiles = await profiles_collection.find().sort("elo_rating", -1).to_list(length=None)
         
         # Convert ObjectId to string for each profile
+        result = []
         for profile in profiles:
-            profile["_id"] = str(profile["_id"])
+            # Convert ObjectId to string
+            profile_id = str(profile["_id"])
+            
+            # Create a Profile object
+            profile_obj = Profile(**profile)
+            
+            # Convert to dict and add the _id field explicitly
+            profile_dict = profile_obj.dict()
+            profile_dict["_id"] = profile_id
+            
+            result.append(profile_dict)
         
-        return [Profile(**profile) for profile in profiles]
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -176,7 +233,7 @@ async def verify_email(verification_data: VerificationRequest, current_user = De
     return {"message": "Email verified successfully"}
 
 @router.get("/{profile_id}", response_model=Profile)
-async def get_profile(profile_id: str, current_user = Depends(get_current_user)):
+async def get_profile(profile_id: str):
     """Get a specific profile"""
     try:
         print(f"Attempting to fetch profile with ID: {profile_id}")
@@ -244,6 +301,16 @@ async def update_profile(
         protected_fields = ["_id", "email", "hashed_password", "is_northeastern_verified", "elo_rating", "match_count"]
         update_data = {k: v for k, v in profile_update.items() if k not in protected_fields}
         
+        # Validate LinkedIn URL
+        if "linkedin_url" in update_data and update_data["linkedin_url"]:
+            if not validate_url(update_data["linkedin_url"], "linkedin"):
+                raise HTTPException(status_code=400, detail="Invalid LinkedIn URL")
+        
+        # Validate GitHub URL
+        if "github_url" in update_data and update_data["github_url"]:
+            if not validate_url(update_data["github_url"], "github"):
+                raise HTTPException(status_code=400, detail="Invalid GitHub URL")
+        
         # Handle base64 image (limit file size)
         if "photo_url" in update_data and update_data["photo_url"].startswith("data:image"):
             # Very basic check for reasonable size (roughly 10MB limit)
@@ -300,5 +367,3 @@ async def update_profile(
     except Exception as e:
         print(f"Unexpected error in update_profile: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-    
-    

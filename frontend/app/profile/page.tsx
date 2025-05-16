@@ -1,10 +1,12 @@
 "use client"
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Header from '../../src/Header';
 import { getCurrentUser } from '../../src/services/auth';
 import { getProfile, updateProfile } from '../../src/services/api';
 import { clubs } from '../../src/data/clubs';
+import { getCompanyLogoUrl } from '../../src/utils/imageUtils';
 
 const degreeOptions = [
   // Associate degrees
@@ -46,31 +48,103 @@ interface ProfileData {
 
 export default function ProfilePage() {
   const router = useRouter();
+  // Initialize with undefined to distinguish between "not yet checked" and "checked but not found"
+  const [profileIdFromUrl, setProfileIdFromUrl] = useState<string | null | undefined>(undefined);
+  const [currentUser, setCurrentUser] = useState<{profile_id: string; name: string; is_northeastern_verified: boolean} | null | undefined>(undefined);
+  
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [editedProfile, setEditedProfile] = useState<ProfileData | null>(null);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [validationErrors, setValidationErrors] = useState<{
+    linkedin_url?: string;
+    github_url?: string;
+  }>({});
+  
+  // Get profile ID from URL and current user after component mounts
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Get profile ID from URL
+      const searchParams = new URLSearchParams(window.location.search);
+      const id = searchParams.get('id');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Profile ID from URL:', id);
+      }
+      setProfileIdFromUrl(id);
+      
+      // Get current user from localStorage
+      try {
+        const user = getCurrentUser();
+        console.log('Current user from localStorage:', user ? 'Found' : 'Not found');
+        setCurrentUser(user);
+      } catch (error) {
+        console.error('Error getting current user:', error);
+        setCurrentUser(null);
+      }
+    }
+  }, []);
 
   useEffect(() => {
+    console.log('Profile fetch effect running, profileIdFromUrl:', profileIdFromUrl, 'currentUser:', currentUser);
+    
+    // Only proceed if both profileIdFromUrl and currentUser have been determined
+    if (profileIdFromUrl === undefined || currentUser === undefined) {
+      console.log('Either profileIdFromUrl or currentUser is undefined, waiting for them to be set');
+      return;
+    }
+    
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        console.log('Current user:', currentUser ? 'Logged in' : 'Not logged in');
+        
+        // Determine which profile ID to use
+        let profileId: string | null = null;
+        
+        if (profileIdFromUrl) {
+          // If URL has a profile ID, use that
+          console.log('Using profile ID from URL:', profileIdFromUrl);
+          profileId = profileIdFromUrl;
+        } else if (currentUser) {
+          // If no URL profile ID but user is logged in, use their profile
+          console.log('Using current user profile ID:', currentUser.profile_id);
+          profileId = currentUser.profile_id;
+        } else {
+          // No URL profile ID and no logged in user, redirect to auth
+          console.log('No profile ID and not logged in, redirecting to auth');
+          router.push('/auth');
+          return;
+        }
+        
+        // Fetch the profile data
+        console.log('Fetching profile data for ID:', profileId);
+        const data = await getProfile(profileId);
+        console.log('Profile data received:', data ? 'Success' : 'Failed');
+        
+        // Check if this is the current user's own profile (only if logged in)
+        const isOwn = currentUser ? profileId === currentUser.profile_id : false;
+        console.log('Is own profile:', isOwn);
+        setIsOwnProfile(isOwn);
+        
+        setProfile(data);
+        setEditedProfile(data);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [router, profileIdFromUrl, currentUser]);
+
+  const handleEdit = () => {
     const user = getCurrentUser();
     if (!user) {
       router.push('/auth');
       return;
     }
-
-    const fetchProfile = async () => {
-      try {
-        const data = await getProfile(user.profile_id);
-        setProfile(data);
-        setEditedProfile(data);
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-      }
-    };
-
-    fetchProfile();
-  }, [router]);
-
-  const handleEdit = () => {
     setIsEditing(true);
   };
 
@@ -85,6 +159,31 @@ export default function ProfilePage() {
     try {
       const user = getCurrentUser();
       if (!user) return;
+
+      // Reset validation errors
+      const errors: {linkedin_url?: string; github_url?: string} = {};
+      let hasErrors = false;
+
+      // Validate LinkedIn URL
+      if (editedProfile.linkedin_url && !editedProfile.linkedin_url.startsWith('https://linkedin')) {
+        errors.linkedin_url = 'LinkedIn URL must start with "https://linkedin"';
+        hasErrors = true;
+      }
+
+      // Validate GitHub URL
+      if (editedProfile.github_url && !editedProfile.github_url.startsWith('https://github')) {
+        errors.github_url = 'GitHub URL must start with "https://github"';
+        hasErrors = true;
+      }
+
+      // If there are validation errors, update state and return
+      if (hasErrors) {
+        setValidationErrors(errors);
+        return;
+      }
+
+      // Clear any previous validation errors
+      setValidationErrors({});
 
       // Filter out any empty club entries and experience entries
       const cleanedProfile = {
@@ -127,12 +226,12 @@ export default function ProfilePage() {
     }
   };
 
-  if (!profile) {
+  if (!profile || loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-black">Loading...</div>
+          <div className="text-black">Loading profile...</div>
         </div>
       </div>
     );
@@ -144,30 +243,32 @@ export default function ProfilePage() {
       <div className="flex-1 container mx-auto max-w-3xl px-4 py-8">
         <div className="bg-white border border-black p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-black">Profile</h1>
-            {!isEditing ? (
+            <h1 className="text-2xl font-bold text-black">
+              {isOwnProfile ? 'Your Profile' : `${profile.name}'s Profile`}
+            </h1>
+            {isOwnProfile && !isEditing ? (
               <button
                 onClick={handleEdit}
                 className="px-4 py-2 bg-black text-white hover:bg-gray-800"
               >
                 Edit Profile
               </button>
-            ) : (
-              <div className="flex gap-4">
-                <button
-                  onClick={handleCancel}
-                  className="px-4 py-2 border border-black text-black hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
+            ) : isOwnProfile && isEditing ? (
+              <div className="space-x-2">
                 <button
                   onClick={handleSave}
                   className="px-4 py-2 bg-black text-white hover:bg-gray-800"
                 >
                   Save
                 </button>
+                <button
+                  onClick={handleCancel}
+                  className="px-4 py-2 bg-white text-black border border-black hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
               </div>
-            )}
+            ) : null}
           </div>
 
           <div className="space-y-6">
@@ -175,12 +276,16 @@ export default function ProfilePage() {
             <div className="flex items-start gap-6">
               {/* Profile Picture */}
               <div className="w-32">
-                <img
-                  src={profile.photo_url}
-                  alt={profile.name}
-                  className="w-32 h-32 object-cover border border-black"
-                />
-                {isEditing && (
+                <div className="w-32 h-32 border border-black relative">
+                  <Image
+                    src={profile.photo_url || '/images/profile-placeholder.png'}
+                    alt={profile.name}
+                    fill
+                    sizes="128px"
+                    style={{ objectFit: 'cover' }}
+                  />
+                </div>
+                {isOwnProfile && isEditing && (
                   <div className="mt-2">
                     <label htmlFor="photo-upload" className="block text-sm font-medium text-black mb-1">
                       Change Photo
@@ -324,13 +429,19 @@ export default function ProfilePage() {
                   LinkedIn URL
                 </label>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    name="linkedin_url"
-                    value={editedProfile?.linkedin_url || ''}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-black text-black"
-                  />
+                  <div>
+                    <input
+                      type="text"
+                      name="linkedin_url"
+                      value={editedProfile?.linkedin_url || ''}
+                      onChange={handleChange}
+                      className={`w-full p-2 border ${validationErrors.linkedin_url ? 'border-red-500' : 'border-black'} text-black`}
+                      placeholder="https://linkedin.com/in/yourprofile"
+                    />
+                    {validationErrors.linkedin_url && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.linkedin_url}</p>
+                    )}
+                  </div>
                 ) : (
                   <div className="text-black">
                     {profile.linkedin_url ? (
@@ -354,13 +465,19 @@ export default function ProfilePage() {
                   GitHub URL
                 </label>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    name="github_url"
-                    value={editedProfile?.github_url || ''}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-black text-black"
-                  />
+                  <div>
+                    <input
+                      type="text"
+                      name="github_url"
+                      value={editedProfile?.github_url || ''}
+                      onChange={handleChange}
+                      className={`w-full p-2 border ${validationErrors.github_url ? 'border-red-500' : 'border-black'} text-black`}
+                      placeholder="https://github.com/yourusername"
+                    />
+                    {validationErrors.github_url && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.github_url}</p>
+                    )}
+                  </div>
                 ) : (
                   <div className="text-black">
                     {profile.github_url ? (
@@ -468,11 +585,15 @@ export default function ProfilePage() {
                           </span>
                           {clubDetails ? (
                             <div className="flex items-center flex-1">
-                              <img 
-                                src={clubDetails.logo} 
-                                alt={clubDetails.name} 
-                                className="w-10 h-10 object-contain mr-3" 
-                              />
+                              <div className="w-10 h-10 mr-3 relative">
+                                <Image 
+                                  src={clubDetails.logo} 
+                                  alt={clubDetails.name} 
+                                  fill
+                                  sizes="40px"
+                                  style={{ objectFit: 'contain' }}
+                                />
+                              </div>
                               <div className="flex-1">
                                 <div className="font-medium text-black">{clubDetails.name}</div>
                                 <a 
@@ -559,7 +680,7 @@ export default function ProfilePage() {
                               {experience?.company && (
                                 <div className="w-8 h-8 mr-2 flex-shrink-0">
                                   <img 
-                                    src={`https://logo.clearbit.com/${experience.company.toLowerCase().trim().replace(/(inc\.?|corp\.?|llc\.?|ltd\.?)$/i, '').trim().replace(/\s+/g, '')}.com`}
+                                    src={getCompanyLogoUrl(experience.company)}
                                     alt={experience.company}
                                     className="w-full h-full object-contain"
                                     onError={(e) => {
@@ -609,23 +730,14 @@ export default function ProfilePage() {
                 profile.experiences && profile.experiences.length > 0 ? (
                   <div className="space-y-4">
                     {profile.experiences.map((exp, index) => {
-                      // Extract domain from company name for logo
-                      const companyName = exp.company.toLowerCase().trim();
-                      // Remove common suffixes and spaces
-                      const simplifiedName = companyName
-                        .replace(/(inc\.?|corp\.?|llc\.?|ltd\.?)$/i, '')
-                        .trim()
-                        .replace(/\s+/g, '');
-                      
-                      // Create logo URL using Clearbit
-                      const logoUrl = `https://logo.clearbit.com/${simplifiedName}.com`;
+                      // Get company logo URL using utility function
                       
                       return (
                         <div key={index} className="p-4 border border-gray-200">
                           <div className="flex items-center">
                             <div className="w-10 h-10 mr-3 flex-shrink-0">
                               <img 
-                                src={logoUrl}
+                                src={getCompanyLogoUrl(exp.company)}
                                 alt={exp.company}
                                 className="w-full h-full object-contain"
                                 onError={(e) => {
