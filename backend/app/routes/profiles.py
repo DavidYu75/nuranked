@@ -103,10 +103,21 @@ async def get_leaderboard():
         profiles = await profiles_collection.find().sort("elo_rating", -1).to_list(length=None)
         
         # Convert ObjectId to string for each profile
+        result = []
         for profile in profiles:
-            profile["_id"] = str(profile["_id"])
+            # Convert ObjectId to string
+            profile_id = str(profile["_id"])
+            
+            # Create a Profile object
+            profile_obj = Profile(**profile)
+            
+            # Convert to dict and add the _id field explicitly
+            profile_dict = profile_obj.dict()
+            profile_dict["_id"] = profile_id
+            
+            result.append(profile_dict)
         
-        return [Profile(**profile) for profile in profiles]
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -3,6 +3,7 @@ import Header from "../src/Header";
 import React, { useEffect, useRef, useState } from "react";
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { getLeaderboard } from "../src/services/api";
 import { clubs } from "../src/data/clubs";
 const SplineIcon = dynamic(() => import('../src/SplineIcon'), { ssr: false });
@@ -25,10 +26,16 @@ interface LeaderboardEntry {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [showMiniLogo, setShowMiniLogo] = useState(false);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const logoRef = useRef<HTMLDivElement>(null);
+  
+  // Function to navigate to a profile page
+  const navigateToProfile = (profileId: string) => {
+    router.push(`/profile?id=${profileId}`);
+  };
 
   useEffect(() => {
     // Handle logo visibility on scroll
@@ -52,16 +59,14 @@ export default function Home() {
         // Debug the data structure
         console.log('Leaderboard data:', data);
         
-        // Ensure each entry has an id
-        const processedData = data.map((entry: LeaderboardEntry, index: number) => {
-          // If the entry doesn't have an id or it's undefined, use _id or generate one
-          if (!entry.id) {
-            return {
-              ...entry,
-              id: entry._id || `generated-id-${index}`
-            };
-          }
-          return entry;
+        // MongoDB returns _id as the identifier, make sure we use it
+        const processedData = data.map((entry: LeaderboardEntry) => {
+          // MongoDB ObjectId is stored in _id field, so we'll use that
+          return {
+            ...entry,
+            // Keep the original _id for API calls
+            _id: entry._id
+          };
         });
         
         setLeaderboard(processedData);
@@ -95,8 +100,9 @@ export default function Home() {
           ) : (
             leaderboard.map((entry, idx) => (
               <div
-                key={`leaderboard-entry-${entry.id || idx}`}
-                className={`flex items-center border border-black bg-white${idx === 0 ? ' border-t' : ' border-t-0'}`}
+                key={`leaderboard-entry-${entry._id || idx}`}
+                className={`flex items-center border border-black bg-white${idx === 0 ? ' border-t' : ' border-t-0'} cursor-pointer hover:bg-gray-50 transition-colors`}
+                onClick={() => navigateToProfile(entry._id || '')}
               >
                 <div className="w-10 flex justify-center items-center px-2 py-2 font-mono text-black font-semibold">
                   {idx + 1}

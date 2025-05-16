@@ -46,9 +46,14 @@ interface ProfileData {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+  const profileIdFromUrl = searchParams.get('id');
+  
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [editedProfile, setEditedProfile] = useState<ProfileData | null>(null);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const user = getCurrentUser();
@@ -59,16 +64,26 @@ export default function ProfilePage() {
 
     const fetchProfile = async () => {
       try {
-        const data = await getProfile(user.profile_id);
+        setLoading(true);
+        // If there's a profile ID in the URL, use that; otherwise use the current user's profile
+        const profileId = profileIdFromUrl || user.profile_id;
+        const data = await getProfile(profileId);
+        
+        // Check if this is the current user's own profile
+        const isOwn = profileId === user.profile_id;
+        setIsOwnProfile(isOwn);
+        
         setProfile(data);
         setEditedProfile(data);
       } catch (error) {
         console.error('Error fetching profile:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchProfile();
-  }, [router]);
+  }, [router, profileIdFromUrl]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -127,12 +142,12 @@ export default function ProfilePage() {
     }
   };
 
-  if (!profile) {
+  if (!profile || loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-black">Loading...</div>
+          <div className="text-black">Loading profile...</div>
         </div>
       </div>
     );
@@ -144,30 +159,32 @@ export default function ProfilePage() {
       <div className="flex-1 container mx-auto max-w-3xl px-4 py-8">
         <div className="bg-white border border-black p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-black">Profile</h1>
-            {!isEditing ? (
+            <h1 className="text-2xl font-bold text-black">
+              {isOwnProfile ? 'Your Profile' : `${profile.name}'s Profile`}
+            </h1>
+            {isOwnProfile && !isEditing ? (
               <button
                 onClick={handleEdit}
                 className="px-4 py-2 bg-black text-white hover:bg-gray-800"
               >
                 Edit Profile
               </button>
-            ) : (
-              <div className="flex gap-4">
-                <button
-                  onClick={handleCancel}
-                  className="px-4 py-2 border border-black text-black hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
+            ) : isOwnProfile && isEditing ? (
+              <div className="space-x-2">
                 <button
                   onClick={handleSave}
                   className="px-4 py-2 bg-black text-white hover:bg-gray-800"
                 >
                   Save
                 </button>
+                <button
+                  onClick={handleCancel}
+                  className="px-4 py-2 bg-white text-black border border-black hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
               </div>
-            )}
+            ) : null}
           </div>
 
           <div className="space-y-6">
@@ -180,7 +197,7 @@ export default function ProfilePage() {
                   alt={profile.name}
                   className="w-32 h-32 object-cover border border-black"
                 />
-                {isEditing && (
+                {isOwnProfile && isEditing && (
                   <div className="mt-2">
                     <label htmlFor="photo-upload" className="block text-sm font-medium text-black mb-1">
                       Change Photo
