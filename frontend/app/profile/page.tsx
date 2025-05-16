@@ -6,6 +6,7 @@ import Header from '../../src/Header';
 import { getCurrentUser } from '../../src/services/auth';
 import { getProfile, updateProfile } from '../../src/services/api';
 import { clubs } from '../../src/data/clubs';
+import { getCompanyLogoUrl } from '../../src/utils/imageUtils';
 
 const degreeOptions = [
   // Associate degrees
@@ -678,27 +679,15 @@ export default function ProfilePage() {
                             <div className="flex items-center">
                               {experience?.company && (
                                 <div className="w-8 h-8 mr-2 flex-shrink-0">
-                                  {/* Create simplified company name for logo URL */}
-                                  {(() => {
-                                    const companyName = experience.company.toLowerCase().trim();
-                                    const simplifiedName = companyName
-                                      .replace(/(inc\.?|corp\.?|llc\.?|ltd\.?)$/i, '')
-                                      .trim()
-                                      .replace(/\s+/g, '');
-                                    const logoUrl = `https://logo.clearbit.com/${simplifiedName}.com`;
-                                    
-                                    return (
-                                      <img 
-                                        src={logoUrl}
-                                        alt={experience.company}
-                                        className="w-full h-full object-contain"
-                                        onError={(e) => {
-                                          // If logo fails to load, use placeholder
-                                          (e.target as HTMLImageElement).src = '/images/company-placeholder.svg';
-                                        }}
-                                      />
-                                    );
-                                  })()}
+                                  <img 
+                                    src={getCompanyLogoUrl(experience.company)}
+                                    alt={experience.company}
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => {
+                                      // If logo fails to load, use placeholder
+                                      (e.target as HTMLImageElement).src = '/images/company-placeholder.svg';
+                                    }}
+                                  />
                                 </div>
                               )}
                               <input
@@ -741,23 +730,14 @@ export default function ProfilePage() {
                 profile.experiences && profile.experiences.length > 0 ? (
                   <div className="space-y-4">
                     {profile.experiences.map((exp, index) => {
-                      // Extract domain from company name for logo
-                      const companyName = exp.company.toLowerCase().trim();
-                      // Remove common suffixes and spaces
-                      const simplifiedName = companyName
-                        .replace(/(inc\.?|corp\.?|llc\.?|ltd\.?)$/i, '')
-                        .trim()
-                        .replace(/\s+/g, '');
-                      
-                      // Create logo URL using Clearbit
-                      const logoUrl = `https://logo.clearbit.com/${simplifiedName}.com`;
+                      // Get company logo URL using utility function
                       
                       return (
                         <div key={index} className="p-4 border border-gray-200">
                           <div className="flex items-center">
                             <div className="w-10 h-10 mr-3 flex-shrink-0">
                               <img 
-                                src={logoUrl}
+                                src={getCompanyLogoUrl(exp.company)}
                                 alt={exp.company}
                                 className="w-full h-full object-contain"
                                 onError={(e) => {
