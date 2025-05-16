@@ -2,25 +2,24 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: [
-      'randomuser.me',        // For profile photos
-      'logo.clearbit.com',    // For company logos
-    ],
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'randomuser.me',
+        pathname: '**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'logo.clearbit.com',
+        pathname: '**',
+      },
       {
         protocol: 'https',
         hostname: '**',
         pathname: '/logos/**',
       },
-      {
-        protocol: 'https',
-        hostname: 'shorturl.at',
-      },
-      {
-        protocol: 'https',
-        hostname: 'tinyurl.com',
-      },
     ],
+    unoptimized: true, // This will allow any external image to be loaded without optimization
   },
 };
 

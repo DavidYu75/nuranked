@@ -1,6 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Header from '../../src/Header';
 import { getCurrentUser } from '../../src/services/auth';
 import { getProfile, updateProfile } from '../../src/services/api';
@@ -192,11 +193,15 @@ export default function ProfilePage() {
             <div className="flex items-start gap-6">
               {/* Profile Picture */}
               <div className="w-32">
-                <img
-                  src={profile.photo_url}
-                  alt={profile.name}
-                  className="w-32 h-32 object-cover border border-black"
-                />
+                <div className="w-32 h-32 border border-black relative">
+                  <Image
+                    src={profile.photo_url || '/images/profile-placeholder.png'}
+                    alt={profile.name}
+                    fill
+                    sizes="128px"
+                    style={{ objectFit: 'cover' }}
+                  />
+                </div>
                 {isOwnProfile && isEditing && (
                   <div className="mt-2">
                     <label htmlFor="photo-upload" className="block text-sm font-medium text-black mb-1">
@@ -485,11 +490,15 @@ export default function ProfilePage() {
                           </span>
                           {clubDetails ? (
                             <div className="flex items-center flex-1">
-                              <img 
-                                src={clubDetails.logo} 
-                                alt={clubDetails.name} 
-                                className="w-10 h-10 object-contain mr-3" 
-                              />
+                              <div className="w-10 h-10 mr-3 relative">
+                                <Image 
+                                  src={clubDetails.logo} 
+                                  alt={clubDetails.name} 
+                                  fill
+                                  sizes="40px"
+                                  style={{ objectFit: 'contain' }}
+                                />
+                              </div>
                               <div className="flex-1">
                                 <div className="font-medium text-black">{clubDetails.name}</div>
                                 <a 
@@ -575,15 +584,27 @@ export default function ProfilePage() {
                             <div className="flex items-center">
                               {experience?.company && (
                                 <div className="w-8 h-8 mr-2 flex-shrink-0">
-                                  <img 
-                                    src={`https://logo.clearbit.com/${experience.company.toLowerCase().trim().replace(/(inc\.?|corp\.?|llc\.?|ltd\.?)$/i, '').trim().replace(/\s+/g, '')}.com`}
-                                    alt={experience.company}
-                                    className="w-full h-full object-contain"
-                                    onError={(e) => {
-                                      // If logo fails to load, use placeholder
-                                      (e.target as HTMLImageElement).src = '/images/company-placeholder.svg';
-                                    }}
-                                  />
+                                  {/* Create simplified company name for logo URL */}
+                                  {(() => {
+                                    const companyName = experience.company.toLowerCase().trim();
+                                    const simplifiedName = companyName
+                                      .replace(/(inc\.?|corp\.?|llc\.?|ltd\.?)$/i, '')
+                                      .trim()
+                                      .replace(/\s+/g, '');
+                                    const logoUrl = `https://logo.clearbit.com/${simplifiedName}.com`;
+                                    
+                                    return (
+                                      <img 
+                                        src={logoUrl}
+                                        alt={experience.company}
+                                        className="w-full h-full object-contain"
+                                        onError={(e) => {
+                                          // If logo fails to load, use placeholder
+                                          (e.target as HTMLImageElement).src = '/images/company-placeholder.svg';
+                                        }}
+                                      />
+                                    );
+                                  })()}
                                 </div>
                               )}
                               <input
