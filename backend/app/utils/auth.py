@@ -10,7 +10,7 @@ from bson import ObjectId
 # Security configurations
 SECRET_KEY = "your-secret-key-replace-in-production"  # Use env variable in production
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 10080
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
