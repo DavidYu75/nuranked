@@ -51,7 +51,7 @@ export const clubs: Club[] = [
   {
     id: "colorstack",
     name: "ColorStack",
-    logo: "https://tinyurl.com/yfnhxszv",
+    logo: "https://shorturl.at/7bgIi",
     url: "https://colorstackneu.sites.northeastern.edu/",
   },
   {
