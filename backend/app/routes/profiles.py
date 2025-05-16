@@ -257,13 +257,13 @@ async def update_profile(
         
         # Validate LinkedIn URL
         if "linkedin_url" in update_data and update_data["linkedin_url"]:
-            if not update_data["linkedin_url"].startswith("https://linkedin"):
-                raise HTTPException(status_code=400, detail="LinkedIn URL must start with 'https://linkedin'")
+            if not validate_url(update_data["linkedin_url"], "linkedin"):
+                raise HTTPException(status_code=400, detail="Invalid LinkedIn URL")
         
         # Validate GitHub URL
         if "github_url" in update_data and update_data["github_url"]:
-            if not update_data["github_url"].startswith("https://github"):
-                raise HTTPException(status_code=400, detail="GitHub URL must start with 'https://github'")
+            if not validate_url(update_data["github_url"], "github"):
+                raise HTTPException(status_code=400, detail="Invalid GitHub URL")
         
         # Handle base64 image (limit file size)
         if "photo_url" in update_data and update_data["photo_url"].startswith("data:image"):
