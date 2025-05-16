@@ -187,7 +187,7 @@ async def verify_email(verification_data: VerificationRequest, current_user = De
     return {"message": "Email verified successfully"}
 
 @router.get("/{profile_id}", response_model=Profile)
-async def get_profile(profile_id: str, current_user = Depends(get_current_user)):
+async def get_profile(profile_id: str):
     """Get a specific profile"""
     try:
         print(f"Attempting to fetch profile with ID: {profile_id}")
