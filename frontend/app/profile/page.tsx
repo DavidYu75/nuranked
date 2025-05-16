@@ -67,7 +67,9 @@ export default function ProfilePage() {
       // Get profile ID from URL
       const searchParams = new URLSearchParams(window.location.search);
       const id = searchParams.get('id');
-      console.log('Profile ID from URL:', id);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Profile ID from URL:', id);
+      }
       setProfileIdFromUrl(id);
       
       // Get current user from localStorage
