@@ -625,15 +625,12 @@ export default function ProfilePage() {
                         {clubDetails ? (
                           <div className="flex items-center flex-1">
                             <div className="w-10 h-10 mr-3 relative">
-                              {/* Using img tag for club logos since they use URL shorteners */}
-                              <img
+                              <Image
                                 src={clubDetails.logo}
                                 alt={clubDetails.name}
-                                className="w-full h-full object-contain"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src =
-                                    "/images/company-placeholder.svg";
-                                }}
+                                fill
+                                sizes="40px"
+                                style={{ objectFit: "contain" }}
                               />
                             </div>
                             <div className="flex-1">
