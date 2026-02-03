@@ -74,18 +74,11 @@ export default function ProfilePage() {
       // Get profile ID from URL
       const searchParams = new URLSearchParams(window.location.search);
       const id = searchParams.get("id");
-      if (process.env.NODE_ENV !== "production") {
-        console.log("Profile ID from URL:", id);
-      }
       setProfileIdFromUrl(id);
 
       // Get current user from localStorage
       try {
         const user = getCurrentUser();
-        console.log(
-          "Current user from localStorage:",
-          user ? "Found" : "Not found",
-        );
         setCurrentUser(user);
       } catch (error) {
         console.error("Error getting current user:", error);
@@ -95,57 +88,37 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    console.log(
-      "Profile fetch effect running, profileIdFromUrl:",
-      profileIdFromUrl,
-      "currentUser:",
-      currentUser,
-    );
-
     // Only proceed if both profileIdFromUrl and currentUser have been determined
     if (profileIdFromUrl === undefined || currentUser === undefined) {
-      console.log(
-        "Either profileIdFromUrl or currentUser is undefined, waiting for them to be set",
-      );
       return;
     }
 
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        console.log(
-          "Current user:",
-          currentUser ? "Logged in" : "Not logged in",
-        );
 
         // Determine which profile ID to use
         let profileId: string | null = null;
 
         if (profileIdFromUrl) {
           // If URL has a profile ID, use that
-          console.log("Using profile ID from URL:", profileIdFromUrl);
           profileId = profileIdFromUrl;
         } else if (currentUser) {
           // If no URL profile ID but user is logged in, use their profile
-          console.log("Using current user profile ID:", currentUser.profile_id);
           profileId = currentUser.profile_id;
         } else {
           // No URL profile ID and no logged in user, redirect to auth
-          console.log("No profile ID and not logged in, redirecting to auth");
           router.push("/auth");
           return;
         }
 
         // Fetch the profile data
-        console.log("Fetching profile data for ID:", profileId);
         const data = await getProfile(profileId);
-        console.log("Profile data received:", data ? "Success" : "Failed");
 
         // Check if this is the current user's own profile (only if logged in)
         const isOwn = currentUser
           ? profileId === currentUser.profile_id
           : false;
-        console.log("Is own profile:", isOwn);
         setIsOwnProfile(isOwn);
 
         setProfile(data);
